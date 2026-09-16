@@ -5,6 +5,9 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { SplashScreen } from 'expo-router';
 import { PetProvider } from '@/context/PetContext';
+import DailyRewardModal from '@/components/DailyRewardModal';
+import AchievementToast from '@/components/AchievementToast';
+import EvolutionModal from '@/components/EvolutionModal';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -36,6 +39,9 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" options={{ title: 'Oops!' }} />
       </Stack>
+      <DailyRewardModal />
+      <AchievementToast />
+      <EvolutionModal />
       <StatusBar style="auto" />
     </PetProvider>
   );

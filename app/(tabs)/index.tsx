@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Pet from '@/components/Pet';
 import StatusIndicator from '@/components/StatusIndicator';
+import DailyTasks from '@/components/DailyTasks';
 import { usePet } from '@/context/PetContext';
+import { getEvolutionStage, evolutionStages, getPetMood } from '@/data/petData';
 import { theme } from '@/constants/theme';
-import { Bell } from 'lucide-react-native';
+import { Bell, Flame } from 'lucide-react-native';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { currentPet } = usePet();
+  const { currentPet, streak } = usePet();
   const [petAnimation, setPetAnimation] = useState<'idle' | 'happy' | 'sad' | 'sleeping'>('idle');
   const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening' | 'night'>('morning');
 
@@ -75,6 +77,9 @@ export default function HomeScreen() {
     );
   }
 
+  const stage = getEvolutionStage(currentPet.level);
+  const nextStage = evolutionStages.find(s => s.minLevel > currentPet.level);
+
   return (
     <ScrollView
       style={[styles.container, { paddingTop: insets.top }]}
@@ -90,9 +95,17 @@ export default function HomeScreen() {
               : "Time to relax with your furry friend!"}
           </Text>
         </View>
-        <TouchableOpacity style={styles.notificationButton}>
-          <Bell size={24} color={theme.colors.text} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {streak > 0 && (
+            <View style={styles.streakPill}>
+              <Flame size={16} color="#FF6B35" />
+              <Text style={styles.streakText}>{streak}</Text>
+            </View>
+          )}
+          <TouchableOpacity style={styles.notificationButton}>
+            <Bell size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Pet display area */}
@@ -102,7 +115,19 @@ export default function HomeScreen() {
           name={currentPet.name}
           level={currentPet.level}
           animation={petAnimation}
+          accessoryId={currentPet.activeCustomization}
+          mood={getPetMood(currentPet.stats)}
+          showMoodBubble
         />
+        <View style={styles.stageBadge}>
+          <Text style={styles.stageEmoji}>{stage.emoji}</Text>
+          <Text style={styles.stageText}>{stage.name}</Text>
+        </View>
+        {nextStage && (
+          <Text style={styles.nextStageText}>
+            Evolves to {nextStage.name} {nextStage.emoji} at Lv. {nextStage.minLevel}
+          </Text>
+        )}
       </View>
 
       {/* Pet status indicators */}
@@ -124,6 +149,9 @@ export default function HomeScreen() {
           value={currentPet.stats.health} 
         />
       </View>
+
+      {/* Daily tasks */}
+      <DailyTasks />
 
       {/* Pet info card */}
       <View style={styles.infoCard}>
@@ -164,7 +192,7 @@ export default function HomeScreen() {
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Birthday:</Text>
           <Text style={styles.infoValue}>
-            {new Date(currentPet.birthday).toLocaleDateString()}
+            {new Date(currentPet.createdAt).toLocaleDateString()}
           </Text>
         </View>
       </View>
@@ -203,6 +231,51 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: theme.borderRadius.full,
     ...theme.shadows.small,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  streakPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'white',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    ...theme.shadows.small,
+  },
+  streakText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
+    color: theme.colors.text,
+  },
+  stageBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'white',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    marginTop: theme.spacing.sm,
+    ...theme.shadows.small,
+  },
+  stageEmoji: {
+    fontSize: 18,
+  },
+  stageText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 16,
+    color: theme.colors.primary,
+  },
+  nextStageText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 13,
+    color: theme.colors.subtext,
+    marginTop: theme.spacing.xs,
   },
   petContainer: {
     alignItems: 'center',

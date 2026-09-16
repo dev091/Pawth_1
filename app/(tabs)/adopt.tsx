@@ -227,7 +227,7 @@ export default function AdoptScreen() {
           {renderStepContent()}
         </View>
 
-        <View style={styles.buttonContainer}>
+        <View style={[styles.buttonContainer, { marginBottom: Math.max(theme.spacing.md, insets.bottom) }]}>
           {step !== 'select' && (
             <TouchableOpacity
               style={styles.backButton}
@@ -378,7 +378,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: theme.spacing.md,
-    marginBottom: Math.max(theme.spacing.md, insets.bottom),
   },
   backButton: {
     paddingVertical: theme.spacing.md,

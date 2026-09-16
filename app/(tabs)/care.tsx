@@ -1,18 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity,
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   Animated,
   Platform,
-  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/constants/theme';
 import Pet from '@/components/Pet';
 import CareActionButton from '@/components/CareActionButton';
+import CustomizationShop from '@/components/CustomizationShop';
 import { usePet } from '@/context/PetContext';
 import { CareAction, careActions } from '@/data/petData';
 import StatusIndicator from '@/components/StatusIndicator';
@@ -143,7 +142,11 @@ export default function CareScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <ScrollView
+      style={[styles.container, { paddingTop: insets.top }]}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Care for {currentPet.name}</Text>
       
       {/* Pet animation */}
@@ -153,6 +156,7 @@ export default function CareScreen() {
           name={currentPet.name}
           level={currentPet.level}
           animation={activeFeedback ? 'happy' : 'idle'}
+          accessoryId={currentPet.activeCustomization}
         />
       </View>
       
@@ -204,6 +208,9 @@ export default function CareScreen() {
           value={currentPet.stats.health} 
         />
       </View>
+
+      {/* Customization shop */}
+      <CustomizationShop />
       
       {/* Activity log */}
       <View style={styles.activityContainer}>
@@ -248,12 +255,12 @@ export default function CareScreen() {
               {currentPet.name} joined your family!
             </Text>
             <Text style={styles.activityTime}>
-              {new Date(currentPet.birthday).toLocaleDateString()}
+              {new Date(currentPet.createdAt).toLocaleDateString()}
             </Text>
           </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -261,7 +268,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  contentContainer: {
     padding: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
   },
   title: {
     fontFamily: theme.fonts.bold,

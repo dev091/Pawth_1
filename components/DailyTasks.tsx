@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '@/constants/theme';
 import { usePet } from '@/context/PetContext';
 import { CircleCheck as CheckCircle2, Circle } from 'lucide-react-native';

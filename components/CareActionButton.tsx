@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Platform, View } from 'react-native';
 import { CareAction, careActions } from '@/data/petData';
 import { Heart, Utensils, Moon, Droplets } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
@@ -72,7 +72,7 @@ export default function CareActionButton({
       disabled={disabled}
       activeOpacity={0.8}
     >
-      <Text style={styles.icon}>{renderIcon()}</Text>
+      <View style={styles.icon}>{renderIcon()}</View>
       <Text style={styles.label}>{actionData.label}</Text>
     </TouchableOpacity>
   );
