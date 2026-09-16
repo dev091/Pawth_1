@@ -1,37 +1,46 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  Image,
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   Switch
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/constants/theme';
 import { usePet } from '@/context/PetContext';
+import { achievements, getPetMood } from '@/data/petData';
 import Pet from '@/components/Pet';
-import { Bell, Settings, ChevronRight, Award, Gift, Calendar } from 'lucide-react-native';
+import { Bell, Settings, ChevronRight, Award, Gift, Calendar, Trophy } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { pets, currentPet, selectPet } = usePet();
+  const {
+    pets,
+    currentPet,
+    selectPet,
+    points,
+    streak,
+    achievements: unlockedAchievements,
+    soundEnabled,
+    toggleSound,
+  } = usePet();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  
-  // Current user data (in a real app, this would come from user auth)
+
+  // Member since the first pet was adopted (falls back to today).
+  const memberSince = pets.length > 0
+    ? new Date(Math.min(...pets.map(p => new Date(p.createdAt).getTime())))
+    : new Date();
   const userData = {
     name: 'Pet Lover',
-    joinDate: new Date(2023, 0, 15),
     totalPets: pets.length,
-    streak: 7, // Days in a row of pet care
-    points: 350,
   };
 
   // Get the number of days since joining
-  const daysSinceJoining = Math.floor(
-    (new Date().getTime() - userData.joinDate.getTime()) / (1000 * 60 * 60 * 24)
+  const daysSinceJoining = Math.max(
+    1,
+    Math.floor((new Date().getTime() - memberSince.getTime()) / (1000 * 60 * 60 * 24)) + 1
   );
 
   return (
@@ -60,7 +69,7 @@ export default function ProfileScreen() {
           <View style={styles.statIconContainer}>
             <Award size={20} color={theme.colors.primary} />
           </View>
-          <Text style={styles.statValue}>{userData.streak}</Text>
+          <Text style={styles.statValue}>{streak}</Text>
           <Text style={styles.statLabel}>Day Streak</Text>
         </View>
         
@@ -70,7 +79,7 @@ export default function ProfileScreen() {
           <View style={styles.statIconContainer}>
             <Gift size={20} color={theme.colors.primary} />
           </View>
-          <Text style={styles.statValue}>{userData.points}</Text>
+          <Text style={styles.statValue}>{points}</Text>
           <Text style={styles.statLabel}>Points</Text>
         </View>
         
@@ -95,6 +104,9 @@ export default function ProfileScreen() {
               name={currentPet.name}
               level={currentPet.level}
               size="medium"
+              accessoryId={currentPet.activeCustomization}
+              mood={getPetMood(currentPet.stats)}
+              showMoodBubble
             />
           </View>
         </View>
@@ -123,6 +135,7 @@ export default function ProfileScreen() {
                   name={pet.name}
                   level={pet.level}
                   size="small"
+                  accessoryId={pet.activeCustomization}
                 />
                 <Text style={styles.petItemName}>{pet.name}</Text>
                 <Text style={styles.petItemLevel}>Lv. {pet.level}</Text>
@@ -131,6 +144,44 @@ export default function ProfileScreen() {
           </ScrollView>
         </View>
       )}
+
+      {/* Achievements section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Trophy size={20} color={theme.colors.primary} />
+          <Text style={styles.sectionTitle}>Achievements</Text>
+          <Text style={styles.achievementCount}>
+            {unlockedAchievements.length}/{achievements.length}
+          </Text>
+        </View>
+        <View style={styles.achievementGrid}>
+          {achievements.map(achievement => {
+            const unlocked = unlockedAchievements.includes(achievement.id);
+            return (
+              <View
+                key={achievement.id}
+                style={[
+                  styles.achievementCard,
+                  !unlocked && styles.achievementLocked,
+                ]}
+              >
+                <Text style={[styles.achievementEmoji, !unlocked && styles.lockedEmoji]}>
+                  {unlocked ? achievement.emoji : '🔒'}
+                </Text>
+                <Text style={[styles.achievementName, !unlocked && styles.lockedText]}>
+                  {achievement.name}
+                </Text>
+                <Text style={[styles.achievementDesc, !unlocked && styles.lockedText]}>
+                  {achievement.description}
+                </Text>
+                {unlocked && (
+                  <Text style={styles.achievementPoints}>+{achievement.points} pts</Text>
+                )}
+              </View>
+            );
+          })}
+        </View>
+      </View>
 
       {/* Settings section */}
       <View style={styles.section}>
@@ -163,7 +214,7 @@ export default function ProfileScreen() {
             </View>
             <Switch
               value={soundEnabled}
-              onValueChange={setSoundEnabled}
+              onValueChange={toggleSound}
               trackColor={{ false: theme.colors.lightGray, true: theme.colors.primary }}
               thumbColor="white"
             />
@@ -195,7 +246,7 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Pawth v1.0.0</Text>
+        <Text style={styles.footerText}>Pawth v2.0.0</Text>
       </View>
     </ScrollView>
   );
@@ -281,11 +332,68 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: theme.spacing.xl,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
   sectionTitle: {
     fontFamily: theme.fonts.semiBold,
     fontSize: 18,
     color: theme.colors.text,
-    marginBottom: theme.spacing.md,
+    flex: 1,
+  },
+  achievementCount: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 14,
+    color: theme.colors.primary,
+  },
+  achievementGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+  },
+  achievementCard: {
+    width: '48%',
+    backgroundColor: 'white',
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    alignItems: 'center',
+    ...theme.shadows.small,
+  },
+  achievementLocked: {
+    backgroundColor: theme.colors.lightGray,
+    opacity: 0.75,
+  },
+  achievementEmoji: {
+    fontSize: 36,
+    marginBottom: theme.spacing.sm,
+  },
+  lockedEmoji: {
+    opacity: 0.5,
+  },
+  achievementName: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 14,
+    color: theme.colors.text,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  achievementDesc: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: theme.colors.subtext,
+    textAlign: 'center',
+  },
+  lockedText: {
+    color: theme.colors.gray,
+  },
+  achievementPoints: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 12,
+    color: theme.colors.primary,
+    marginTop: theme.spacing.xs,
   },
   currentPetCard: {
     backgroundColor: 'white',

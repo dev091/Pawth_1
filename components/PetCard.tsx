@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Animated } from 'react-native';
 import { PetType, petTypes } from '@/data/petData';
 import { theme } from '@/constants/theme';
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 
 interface PetCardProps {
   type: PetType;
@@ -51,7 +51,7 @@ export default function PetCard({ type, onSelect, selected }: PetCardProps) {
         activeOpacity={0.9}
       >
         <Image
-          source={{ uri: petData.imageUrl }}
+          source={petData.image}
           style={styles.petImage}
           resizeMode="contain"
         />

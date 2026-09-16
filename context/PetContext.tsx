@@ -1,8 +1,24 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Platform } from 'react-native';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Audio } from 'expo-av';
-import { petTypes, PetType, CareAction, careActions, dailyTasks, DailyTask, PetCustomization } from '@/data/petData';
-import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  PetType,
+  CareAction,
+  careActions,
+  dailyTasks as seedDailyTasks,
+  DailyTask,
+  PetCustomization,
+  Achievement,
+  achievements,
+  rewardForStreak,
+  SpinReward,
+  spinRewards,
+  SPIN_COST,
+  EvolutionStage,
+  getEvolutionStage,
+} from '@/data/petData';
+
+const STORAGE_KEY = '@pawth:save:v2';
 
 interface PetStats {
   happiness: number;
@@ -11,111 +27,429 @@ interface PetStats {
   health: number;
 }
 
-interface Pet {
+export interface Pet {
   id: string;
   name: string;
   type: PetType;
+  stats: PetStats;
   level: number;
   experience: number;
-  stats: PetStats;
-  lastInteracted: Date;
-  adopted: boolean;
-  birthday: Date;
+  createdAt: string;
+  lastInteracted: string;
   customizations: string[];
+  activeCustomization?: string;
+}
+
+export interface DailyReward {
+  day: number;
+  points: number;
+}
+
+export interface EvolutionCelebration {
+  petName: string;
+  stage: EvolutionStage;
+}
+
+interface SaveData {
+  version: number;
+  pets: Pet[];
+  currentPetId: string | null;
+  points: number;
+  tasks: DailyTask[];
+  streak: number;
+  lastLoginDay: string | null;
+  achievements: string[];
+  careActionCount: number;
+  minigamesPlayed: number;
+  spinsCount: number;
+  bestCombo: number;
+  evolutionsCount: number;
+  treatBest: number;
+  lastFreeSpinDay: string | null;
+  soundEnabled: boolean;
+  savedAt: string;
 }
 
 interface PetContextType {
   pets: Pet[];
   currentPet: Pet | null;
-  points: number;
+  currentPetId: string | null;
   dailyTasks: DailyTask[];
+  points: number;
+  streak: number;
+  achievements: string[];
+  dailyReward: DailyReward | null;
+  achievementToast: Achievement | null;
+  soundEnabled: boolean;
+  careActionCount: number;
+  minigamesPlayed: number;
+  evolutionCelebration: EvolutionCelebration | null;
+  dismissEvolution: () => void;
+  freeSpinAvailable: boolean;
+  spinCount: number;
+  bestCombo: number;
+  treatBest: number;
+  spinWheel: () => { reward: SpinReward; cost: number; targetIndex: number; fullTurns: number } | null;
+  recordCombo: (combo: number) => void;
+  recordTreatScore: (score: number) => void;
   adoptPet: (type: PetType, name: string) => void;
-  performCareAction: (action: CareAction) => void;
   selectPet: (id: string) => void;
+  performCareAction: (action: CareAction) => void;
   buyCustomization: (customization: PetCustomization) => boolean;
   applyCustomization: (petId: string, customizationId: string) => void;
-  removeCustomization: (petId: string, customizationId: string) => void;
   resetDailyTasks: () => void;
+  rewardMinigame: (catches: number) => { xp: number; points: number };
+  addPoints: (n: number) => void;
+  toggleSound: () => void;
+  dismissDailyReward: () => void;
 }
-
-const defaultStats: PetStats = {
-  happiness: 80,
-  hunger: 80,
-  energy: 100,
-  health: 100,
-};
 
 const PetContext = createContext<PetContextType | undefined>(undefined);
 
-export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [pets, setPets] = useState<Pet[]>([]);
-  const [currentPet, setCurrentPet] = useState<Pet | null>(null);
-  const [points, setPoints] = useState(500); // Starting points
-  const [tasks, setTasks] = useState(dailyTasks);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+export const usePet = () => {
+  const context = useContext(PetContext);
+  if (!context) {
+    throw new Error('usePet must be used within a PetProvider');
+  }
+  return context;
+};
 
-  // Initialize with a default pet for demo purposes
+// Local calendar-day key, e.g. "2026-09-15"
+function dayKey(offsetDays = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// One tick of needs decay: pets get hungry and bored over time.
+function applyDecay(pet: Pet): Pet {
+  const stats = { ...pet.stats };
+  stats.hunger = Math.max(0, stats.hunger - 2);
+  stats.happiness = Math.max(0, stats.happiness - 2);
+  stats.energy = Math.max(0, stats.energy - 1);
+  if (stats.hunger <= 0) {
+    stats.health = Math.max(0, stats.health - 3);
+  } else if (stats.hunger > 50 && stats.happiness > 50) {
+    stats.health = Math.min(100, stats.health + 1);
+  }
+  return { ...pet, stats };
+}
+
+function makeDefaultPet(): Pet {
+  const now = new Date().toISOString();
+  return {
+    id: `pet-${Date.now()}`,
+    name: 'Chirpy',
+    type: 'bird',
+    stats: { happiness: 70, hunger: 60, energy: 80, health: 90 },
+    level: 1,
+    experience: 0,
+    createdAt: now,
+    lastInteracted: now,
+    customizations: [],
+  };
+}
+
+export const PetProvider = ({ children }: { children: ReactNode }) => {
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [currentPetId, setCurrentPetId] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<DailyTask[]>(() => seedDailyTasks.map(t => ({ ...t })));
+  const [points, setPoints] = useState(500);
+  const [streak, setStreak] = useState(0);
+  const [lastLoginDay, setLastLoginDay] = useState<string | null>(null);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  const [careActionCount, setCareActionCount] = useState(0);
+  const [minigamesPlayed, setMinigamesPlayed] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [dailyReward, setDailyReward] = useState<DailyReward | null>(null);
+  const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [spinsCount, setSpinsCount] = useState(0);
+  const [bestCombo, setBestCombo] = useState(0);
+  const [evolutionsCount, setEvolutionsCount] = useState(0);
+  const [treatBest, setTreatBest] = useState(0);
+  const [lastFreeSpinDay, setLastFreeSpinDay] = useState<string | null>(null);
+  const [evolutionCelebration, setEvolutionCelebration] = useState<EvolutionCelebration | null>(null);
+  const celebratedStageRef = useRef<Record<string, string>>({});
+
+  const soundEnabledRef = useRef(soundEnabled);
   useEffect(() => {
-    if (pets.length === 0) {
-      const defaultPet: Pet = {
-        id: '1',
-        name: 'Chirpy',
-        type: 'bird',
-        level: 1,
-        experience: 0,
-        stats: { ...defaultStats },
-        lastInteracted: new Date(),
-        adopted: true,
-        birthday: new Date(),
-        customizations: [],
-      };
-      
-      setPets([defaultPet]);
-      setCurrentPet(defaultPet);
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
+
+  const currentPet = pets.find(p => p.id === currentPetId) ?? null;
+
+  // ---- Daily login / streak ------------------------------------------------
+  const grantDailyReward = (day: number) => {
+    const reward = rewardForStreak(day);
+    setDailyReward({ day, points: reward });
+    setPoints(prev => prev + reward);
+  };
+
+  const handleDailyLogin = (prevStreak: number, prevLoginDay: string | null) => {
+    const today = dayKey();
+    const yesterday = dayKey(-1);
+    if (prevLoginDay === today) {
+      setStreak(prevStreak);
+    } else if (prevLoginDay === yesterday) {
+      const next = prevStreak + 1;
+      setStreak(next);
+      grantDailyReward(next);
+    } else {
+      setStreak(1);
+      grantDailyReward(1);
     }
+    setLastLoginDay(today);
+  };
+
+  // ---- Load persisted state -------------------------------------------------
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const data: SaveData = JSON.parse(raw);
+
+          // Offline decay: 1 tick per hour away, capped at 12 ticks.
+          const hoursAway = Math.min(
+            12,
+            Math.max(0, Math.floor((Date.now() - new Date(data.savedAt).getTime()) / 3600000))
+          );
+          let restoredPets = data.pets;
+          for (let i = 0; i < hoursAway; i++) {
+            restoredPets = restoredPets.map(applyDecay);
+          }
+
+          setPets(restoredPets);
+          setCurrentPetId(data.currentPetId);
+          setPoints(data.points);
+          setTasks(data.tasks && data.tasks.length ? data.tasks : seedDailyTasks.map(t => ({ ...t })));
+          setUnlockedAchievements(data.achievements ?? []);
+          setCareActionCount(data.careActionCount ?? 0);
+          setMinigamesPlayed(data.minigamesPlayed ?? 0);
+          setSpinsCount(data.spinsCount ?? 0);
+          setBestCombo(data.bestCombo ?? 0);
+          setEvolutionsCount(data.evolutionsCount ?? 0);
+          setTreatBest(data.treatBest ?? 0);
+          setLastFreeSpinDay(data.lastFreeSpinDay ?? null);
+          setSoundEnabled(data.soundEnabled ?? true);
+          handleDailyLogin(data.streak ?? 0, data.lastLoginDay ?? null);
+        } else {
+          // First launch: seed a starter pet and a welcome reward.
+          const starter = makeDefaultPet();
+          setPets([starter]);
+          setCurrentPetId(starter.id);
+          setTasks(seedDailyTasks.map(t => ({ ...t })));
+          setStreak(1);
+          setLastLoginDay(dayKey());
+          grantDailyReward(1);
+        }
+      } catch {
+        const starter = makeDefaultPet();
+        setPets([starter]);
+        setCurrentPetId(starter.id);
+      }
+      setLoaded(true);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reset daily tasks at midnight
+  // ---- Persist on every change ----------------------------------------------
   useEffect(() => {
+    if (!loaded) return;
+    const data: SaveData = {
+      version: 2,
+      pets,
+      currentPetId,
+      points,
+      tasks,
+      streak,
+      lastLoginDay,
+      achievements: unlockedAchievements,
+      careActionCount,
+      minigamesPlayed,
+      spinsCount,
+      bestCombo,
+      evolutionsCount,
+      treatBest,
+      lastFreeSpinDay,
+      soundEnabled,
+      savedAt: new Date().toISOString(),
+    };
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch(() => {});
+  }, [loaded, pets, currentPetId, points, tasks, streak, lastLoginDay, unlockedAchievements, careActionCount, minigamesPlayed, spinsCount, bestCombo, evolutionsCount, treatBest, lastFreeSpinDay, soundEnabled]);
+
+  // ---- Live needs decay (1 tick per minute) ----------------------------------
+  useEffect(() => {
+    if (!loaded) return;
+    const interval = setInterval(() => {
+      setPets(prev => prev.map(applyDecay));
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [loaded]);
+
+  // ---- Reset daily tasks at midnight -----------------------------------------
+  useEffect(() => {
+    if (!loaded) return;
     const now = new Date();
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const timeUntilMidnight = tomorrow.getTime() - now.getTime();
 
     const timer = setTimeout(() => {
-      resetDailyTasks();
+      setTasks(prevTasks => prevTasks.map(task => ({ ...task, completed: false })));
     }, timeUntilMidnight);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [loaded]);
 
-  // Cleanup sound when component unmounts
+  // ---- Achievements -----------------------------------------------------------
   useEffect(() => {
-    return sound
-      ? () => {
+    if (!loaded) return;
+    const meets = (id: string): boolean => {
+      switch (id) {
+        case 'first-friend': return pets.length >= 1;
+        case 'caretaker-10': return careActionCount >= 10;
+        case 'caretaker-100': return careActionCount >= 100;
+        case 'level-5': return pets.some(p => p.level >= 5);
+        case 'level-10': return pets.some(p => p.level >= 10);
+        case 'streak-3': return streak >= 3;
+        case 'streak-7': return streak >= 7;
+        case 'collector-3': return pets.length >= 3;
+        case 'gamer-5': return minigamesPlayed >= 5;
+        case 'rich-1000': return points >= 1000;
+        case 'spinner-1': return spinsCount >= 1;
+        case 'combo-10': return bestCombo >= 10;
+        case 'evolved-1': return evolutionsCount >= 1;
+        default: return false;
+      }
+    };
+    const newly = achievements.filter(a => !unlockedAchievements.includes(a.id) && meets(a.id));
+    if (newly.length > 0) {
+      setUnlockedAchievements(prev => [...prev, ...newly.map(a => a.id)]);
+      setPoints(prev => prev + newly.reduce((sum, a) => sum + a.points, 0));
+      setAchievementToast(newly[0]);
+    }
+  }, [loaded, pets, careActionCount, minigamesPlayed, streak, points, unlockedAchievements, spinsCount, bestCombo, evolutionsCount]);
+
+  // ---- Evolution celebration --------------------------------------------------
+  // Watches each pet's evolution stage; when a stage advances, queue a
+  // celebration modal and count it (once per evolution).
+  useEffect(() => {
+    if (!loaded) return;
+    for (const pet of pets) {
+      const stage = getEvolutionStage(pet.level);
+      const prev = celebratedStageRef.current[pet.id];
+      if (!prev) {
+        celebratedStageRef.current[pet.id] = stage.name;
+      } else if (prev !== stage.name) {
+        celebratedStageRef.current[pet.id] = stage.name;
+        setEvolutionsCount(c => c + 1);
+        setEvolutionCelebration({ petName: pet.name, stage });
+        break;
+      }
+    }
+  }, [loaded, pets]);
+
+  // Auto-dismiss the achievement toast.
+  useEffect(() => {
+    if (!achievementToast) return;
+    const t = setTimeout(() => setAchievementToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [achievementToast]);
+
+  const playSound = async (soundUri: string) => {
+    if (!soundEnabledRef.current) return;
+    try {
+      const { sound } = await Audio.Sound.createAsync({ uri: soundUri });
+      await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate(status => {
+        if (status.isLoaded && status.didJustFinish) {
           sound.unloadAsync();
         }
-      : undefined;
-  }, [sound]);
-
-  const playSound = async (soundUrl: string) => {
-    if (Platform.OS === 'web') return;
-    
-    try {
-      const { sound: newSound } = await Audio.Sound.createAsync({ uri: soundUrl });
-      setSound(newSound);
-      await newSound.playAsync();
+      });
     } catch (error) {
-      console.error('Error playing sound:', error);
+      console.log('Error playing sound:', error);
     }
   };
 
-  const resetDailyTasks = () => {
-    setTasks(tasks.map(task => ({ ...task, completed: false })));
+  const selectPet = (id: string) => {
+    setCurrentPetId(id);
+  };
+
+  const adoptPet = (type: PetType, name: string) => {
+    const now = new Date().toISOString();
+    const baseStats: Record<PetType, PetStats> = {
+      bird: { happiness: 70, hunger: 60, energy: 80, health: 90 },
+      cat: { happiness: 65, hunger: 55, energy: 75, health: 85 },
+      dog: { happiness: 80, hunger: 70, energy: 90, health: 95 },
+      rabbit: { happiness: 75, hunger: 65, energy: 70, health: 90 },
+    };
+    const newPet: Pet = {
+      id: `pet-${Date.now()}`,
+      name,
+      type,
+      stats: { ...baseStats[type] },
+      level: 1,
+      experience: 0,
+      createdAt: now,
+      lastInteracted: now,
+      customizations: [],
+    };
+    setPets(prev => [...prev, newPet]);
+    setCurrentPetId(newPet.id);
+    playSound('https://assets.mixkit.co/active_storage/sfx/2574/2574-preview.mp3');
+  };
+
+  const addExperience = (pet: Pet, xp: number): Pet => {
+    const experience = pet.experience + xp;
+    const level = Math.floor(experience / 100) + 1;
+    if (level > pet.level) {
+      playSound('https://assets.mixkit.co/active_storage/sfx/2575/2575-preview.mp3');
+      setPoints(prev => prev + 100); // Bonus points for leveling up
+    }
+    return { ...pet, experience, level, lastInteracted: new Date().toISOString() };
+  };
+
+  const performCareAction = async (action: CareAction) => {
+    const pet = pets.find(p => p.id === currentPetId);
+    if (!pet) return;
+
+    playSound(careActions[action].soundEffect);
+
+    const applyAction = (p: Pet): Pet => {
+      const stats = { ...p.stats };
+      let xp = 0;
+      switch (action) {
+        case 'feed':
+          stats.hunger = Math.min(stats.hunger + 20, 100);
+          xp = 5;
+          break;
+        case 'play':
+          stats.happiness = Math.min(stats.happiness + 20, 100);
+          stats.energy = Math.max(stats.energy - 10, 0);
+          xp = 10;
+          break;
+        case 'sleep':
+          stats.energy = Math.min(stats.energy + 30, 100);
+          xp = 5;
+          break;
+        case 'clean':
+          stats.health = Math.min(stats.health + 15, 100);
+          xp = 5;
+          break;
+      }
+      return addExperience({ ...p, stats }, xp);
+    };
+
+    // currentPet is derived from pets + currentPetId, so updating pets is enough.
+    setPets(prevPets => prevPets.map(p => (p.id === pet.id ? applyAction(p) : p)));
+    setCareActionCount(c => c + 1);
+
+    checkAndCompleteTask(action);
   };
 
   const checkAndCompleteTask = (action: CareAction) => {
     const taskToComplete = tasks.find(task => !task.completed && task.type === action);
-    
     if (taskToComplete) {
       setTasks(prevTasks =>
         prevTasks.map(task =>
@@ -123,153 +457,117 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         )
       );
       setPoints(prev => prev + taskToComplete.points);
-      
-      // Trigger haptic feedback for task completion
-      if (Platform.OS !== 'web') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    }
-  };
-
-  const adoptPet = (type: PetType, name: string) => {
-    const newPet: Pet = {
-      id: Date.now().toString(),
-      name,
-      type,
-      level: 1,
-      experience: 0,
-      stats: { ...defaultStats },
-      lastInteracted: new Date(),
-      adopted: true,
-      birthday: new Date(),
-      customizations: [],
-    };
-    
-    setPets(prev => [...prev, newPet]);
-    setCurrentPet(newPet);
-    
-    // Play adoption sound
-    playSound('https://assets.mixkit.co/active_storage/sfx/2574/2574-preview.mp3');
-    
-    // Award points for adopting
-    setPoints(prev => prev + 200);
-    
-    // Trigger haptic feedback
-    if (Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-  };
-
-  const performCareAction = async (action: CareAction) => {
-    if (!currentPet) return;
-    
-    // Play action sound
-    playSound(careActions[action].soundEffect);
-    
-    setPets(currentPets => 
-      currentPets.map(pet => {
-        if (pet.id === currentPet.id) {
-          const newStats = { ...pet.stats };
-          let experience = pet.experience;
-          
-          // Update stats based on action type
-          switch (action) {
-            case 'feed':
-              newStats.hunger = Math.min(newStats.hunger + 20, 100);
-              experience += 5;
-              break;
-            case 'play':
-              newStats.happiness = Math.min(newStats.happiness + 20, 100);
-              newStats.energy = Math.max(newStats.energy - 10, 0);
-              experience += 10;
-              break;
-            case 'sleep':
-              newStats.energy = Math.min(newStats.energy + 30, 100);
-              experience += 5;
-              break;
-            case 'clean':
-              newStats.health = Math.min(newStats.health + 15, 100);
-              experience += 5;
-              break;
-          }
-          
-          // Calculate level based on experience
-          const level = Math.floor(experience / 100) + 1;
-          
-          // Check for level up
-          if (level > pet.level) {
-            playSound('https://assets.mixkit.co/active_storage/sfx/2575/2575-preview.mp3');
-            setPoints(prev => prev + 100); // Bonus points for leveling up
-          }
-          
-          return {
-            ...pet,
-            stats: newStats,
-            experience,
-            level,
-            lastInteracted: new Date(),
-          };
-        }
-        return pet;
-      })
-    );
-    
-    // Check for task completion
-    checkAndCompleteTask(action);
-    
-    // Update current pet
-    setCurrentPet(prev => {
-      if (!prev) return null;
-      
-      const updatedPet = pets.find(p => p.id === prev.id);
-      return updatedPet || prev;
-    });
-  };
-
-  const buyCustomization = (customization: PetCustomization): boolean => {
-    if (points >= customization.cost) {
-      setPoints(prev => prev - customization.cost);
       playSound('https://assets.mixkit.co/active_storage/sfx/2576/2576-preview.mp3');
-      return true;
     }
-    return false;
+  };
+
+  const resetDailyTasks = () => {
+    setTasks(prevTasks => prevTasks.map(task => ({ ...task, completed: false })));
+  };
+
+  const buyCustomization = (customization: PetCustomization) => {
+    if (!currentPet) return false;
+    if (points < customization.cost || currentPet.customizations.includes(customization.id)) {
+      return false;
+    }
+    setPoints(prev => prev - customization.cost);
+    setPets(prevPets =>
+      prevPets.map(pet =>
+        pet.id === currentPet.id
+          ? { ...pet, customizations: [...pet.customizations, customization.id] }
+          : pet
+      )
+    );
+    playSound('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3');
+    return true;
   };
 
   const applyCustomization = (petId: string, customizationId: string) => {
     setPets(prevPets =>
       prevPets.map(pet =>
-        pet.id === petId
-          ? { ...pet, customizations: [...pet.customizations, customizationId] }
-          : pet
-      )
-    );
-    playSound('https://assets.mixkit.co/active_storage/sfx/2577/2577-preview.mp3');
-  };
-
-  const removeCustomization = (petId: string, customizationId: string) => {
-    setPets(prevPets =>
-      prevPets.map(pet =>
-        pet.id === petId
-          ? {
-              ...pet,
-              customizations: pet.customizations.filter(id => id !== customizationId),
-            }
-          : pet
+        pet.id === petId ? { ...pet, activeCustomization: customizationId } : pet
       )
     );
   };
 
-  const selectPet = (id: string) => {
-    const pet = pets.find(p => p.id === id);
-    if (pet) {
-      setCurrentPet(pet);
-      playSound('https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3');
-      
-      // Trigger haptic feedback
-      if (Platform.OS !== 'web') {
-        Haptics.selectionAsync();
-      }
+  // Minigame rewards: XP scales with catches, plus a points payout.
+  const rewardMinigame = (catches: number) => {
+    const xp = catches * 3;
+    const pts = catches * 5;
+    if (currentPetId) {
+      setPets(prevPets =>
+        prevPets.map(p => (p.id === currentPetId ? addExperience(p, xp) : p))
+      );
     }
+    setPoints(prev => prev + pts);
+    setMinigamesPlayed(n => n + 1);
+    checkAndCompleteTask('play');
+    return { xp, points: pts };
+  };
+
+  const addPoints = (n: number) => {
+    setPoints(prev => prev + n);
+  };
+
+  // ---- Lucky Spin -------------------------------------------------------------
+  // Variable-ratio reward schedule: free once per day, then costs points.
+  // Returns the landed reward plus animation parameters for the reel.
+  const freeSpinAvailable = lastFreeSpinDay !== dayKey();
+
+  const spinWheel = () => {
+    const today = dayKey();
+    const free = lastFreeSpinDay !== today;
+    const cost = free ? 0 : SPIN_COST;
+    if (points < cost) return null;
+
+    // Weighted random pick. `roll` lands in [0, totalWeight); each reward
+    // owns the half-open segment [cumWeight, cumWeight + weight), so a roll
+    // landing exactly on a boundary belongs to the later segment.
+    const totalWeight = spinRewards.reduce((s, r) => s + r.weight, 0);
+    let roll = Math.random() * totalWeight;
+    let targetIndex = spinRewards.length - 1;
+    for (let i = 0; i < spinRewards.length; i++) {
+      roll -= spinRewards[i].weight;
+      if (roll < 0) { targetIndex = i; break; }
+    }
+    const reward = spinRewards[targetIndex];
+
+    if (free) {
+      setLastFreeSpinDay(today);
+    } else {
+      setPoints(prev => prev - cost);
+    }
+
+    if (reward.type === 'points') {
+      setPoints(prev => prev + reward.amount);
+    } else if (currentPetId) {
+      setPets(prevPets =>
+        prevPets.map(p => (p.id === currentPetId ? addExperience(p, reward.amount) : p))
+      );
+    }
+    setSpinsCount(c => c + 1);
+    playSound('https://assets.mixkit.co/active_storage/sfx/2576/2576-preview.mp3');
+    return { reward, cost, targetIndex, fullTurns: 5 + Math.floor(Math.random() * 3) };
+  };
+
+  const recordCombo = (combo: number) => {
+    setBestCombo(prev => Math.max(prev, combo));
+  };
+
+  const recordTreatScore = (score: number) => {
+    setTreatBest(prev => Math.max(prev, score));
+  };
+
+  const dismissEvolution = () => {
+    setEvolutionCelebration(null);
+  };
+
+  const toggleSound = () => {
+    setSoundEnabled(prev => !prev);
+  };
+
+  const dismissDailyReward = () => {
+    setDailyReward(null);
   };
 
   return (
@@ -277,26 +575,38 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         pets,
         currentPet,
-        points,
+        currentPetId,
         dailyTasks: tasks,
+        points,
+        streak,
+        achievements: unlockedAchievements,
+        dailyReward,
+        achievementToast,
+        soundEnabled,
+        careActionCount,
+        minigamesPlayed,
+        evolutionCelebration,
+        dismissEvolution,
+        freeSpinAvailable,
+        spinCount: spinsCount,
+        bestCombo,
+        treatBest,
+        spinWheel,
+        recordCombo,
+        recordTreatScore,
         adoptPet,
-        performCareAction,
         selectPet,
+        performCareAction,
         buyCustomization,
         applyCustomization,
-        removeCustomization,
         resetDailyTasks,
+        rewardMinigame,
+        addPoints,
+        toggleSound,
+        dismissDailyReward,
       }}
     >
       {children}
     </PetContext.Provider>
   );
-};
-
-export const usePet = () => {
-  const context = useContext(PetContext);
-  if (context === undefined) {
-    throw new Error('usePet must be used within a PetProvider');
-  }
-  return context;
 };
