@@ -64,6 +64,7 @@ export default function RootLayout() {
             headerTitleStyle: { fontFamily: 'Nunito-Bold' },
           }}
         />
+        <Stack.Screen name="calm" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
         <Stack.Screen name="+not-found" options={{ title: 'Oops!' }} />
       </Stack>
       <DailyRewardModal />

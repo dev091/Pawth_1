@@ -73,6 +73,7 @@ interface SaveData {
   moodEntries: MoodEntry[];
   trailsWalked: number;
   lastChatDay: string | null;
+  calmSessionsCount: number;
   savedAt: string;
 }
 
@@ -106,6 +107,8 @@ interface PetContextType {
   completeTrailWalk: (minutes: number) => { xp: number; points: number };
   chatBonusAvailable: boolean;
   recordChatInteraction: () => void;
+  calmSessionsCount: number;
+  completeCalmSession: (kind: 'breathing' | 'grounding') => { xp: number; points: number };
   adoptPet: (type: PetType, name: string) => void;
   selectPet: (id: string) => void;
   performCareAction: (action: CareAction) => void;
@@ -188,6 +191,7 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [trailsWalked, setTrailsWalked] = useState(0);
   const [lastChatDay, setLastChatDay] = useState<string | null>(null);
+  const [calmSessionsCount, setCalmSessionsCount] = useState(0);
 
   const soundEnabledRef = useRef(soundEnabled);
   useEffect(() => {
@@ -270,6 +274,7 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
           setMoodEntries(data.moodEntries ?? []);
           setTrailsWalked(data.trailsWalked ?? 0);
           setLastChatDay(data.lastChatDay ?? null);
+          setCalmSessionsCount(data.calmSessionsCount ?? 0);
           handleDailyLogin(data.streak ?? 0, data.lastLoginDay ?? null);
         } else {
           // First launch: seed a starter pet and a welcome reward.
@@ -314,10 +319,11 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
       moodEntries,
       trailsWalked,
       lastChatDay,
+      calmSessionsCount,
       savedAt: new Date().toISOString(),
     };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch(() => {});
-  }, [loaded, pets, currentPetId, points, tasks, streak, lastLoginDay, unlockedAchievements, careActionCount, minigamesPlayed, spinsCount, bestCombo, evolutionsCount, treatBest, lastFreeSpinDay, soundEnabled, moodEntries, trailsWalked, lastChatDay]);
+  }, [loaded, pets, currentPetId, points, tasks, streak, lastLoginDay, unlockedAchievements, careActionCount, minigamesPlayed, spinsCount, bestCombo, evolutionsCount, treatBest, lastFreeSpinDay, soundEnabled, moodEntries, trailsWalked, lastChatDay, calmSessionsCount]);
 
   // ---- Live needs decay (1 tick per minute) ----------------------------------
   useEffect(() => {
@@ -363,6 +369,7 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
         case 'mood-streak-3': return moodStreak >= 3;
         case 'mood-streak-7': return moodStreak >= 7;
         case 'trailblazer-1': return trailsWalked >= 1;
+        case 'calm-1': return calmSessionsCount >= 1;
         default: return false;
       }
     };
@@ -372,7 +379,7 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
       setPoints(prev => prev + newly.reduce((sum, a) => sum + a.points, 0));
       setAchievementToast(newly[0]);
     }
-  }, [loaded, pets, careActionCount, minigamesPlayed, streak, points, unlockedAchievements, spinsCount, bestCombo, evolutionsCount, moodStreak, trailsWalked]);
+  }, [loaded, pets, careActionCount, minigamesPlayed, streak, points, unlockedAchievements, spinsCount, bestCombo, evolutionsCount, moodStreak, trailsWalked, calmSessionsCount]);
 
   // ---- Evolution celebration --------------------------------------------------
   // Watches each pet's evolution stage; when a stage advances, queue a
@@ -639,6 +646,28 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
     return { xp, points: pts };
   };
 
+  // ---- Calm Corner (breathing / grounding) --------------------------------
+  const completeCalmSession = (kind: 'breathing' | 'grounding') => {
+    const xp = 8;
+    const pts = 15;
+    if (currentPetId) {
+      setPets(prevPets =>
+        prevPets.map(p =>
+          p.id === currentPetId
+            ? {
+                ...addExperience(p, xp),
+                stats: { ...p.stats, happiness: Math.min(100, p.stats.happiness + 6) },
+              }
+            : p
+        )
+      );
+    }
+    setPoints(prev => prev + pts);
+    setCalmSessionsCount(c => c + 1);
+    playSound('https://assets.mixkit.co/active_storage/sfx/2576/2576-preview.mp3');
+    return { xp, points: pts };
+  };
+
   const chatBonusAvailable = lastChatDay !== dayKey();
 
   // First conversation of the day gives the pet a little happiness/points
@@ -702,6 +731,8 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
         completeTrailWalk,
         chatBonusAvailable,
         recordChatInteraction,
+        calmSessionsCount,
+        completeCalmSession,
         adoptPet,
         selectPet,
         performCareAction,

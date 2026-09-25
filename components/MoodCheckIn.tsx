@@ -4,22 +4,26 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { theme } from '@/constants/theme';
 import { usePet } from '@/context/PetContext';
-import { moodOptions, moodById } from '@/data/petData';
-import { Flame, ChevronRight } from 'lucide-react-native';
+import { moodOptions, moodById, MoodType } from '@/data/petData';
+import { Flame, ChevronRight, Wind } from 'lucide-react-native';
 
 export default function MoodCheckIn() {
   const router = useRouter();
   const { todaysMood, moodStreak, logMood } = usePet();
   const [note, setNote] = useState('');
   const [justLogged, setJustLogged] = useState(false);
+  const [loggedMood, setLoggedMood] = useState<MoodType | null>(null);
 
-  const handlePick = (moodId: (typeof moodOptions)[number]['id']) => {
+  const handlePick = (moodId: MoodType) => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     logMood(moodId, note.trim());
+    setLoggedMood(moodId);
     setJustLogged(true);
   };
+
+  const suggestCalm = justLogged && (loggedMood === 'low' || loggedMood === 'awful');
 
   if (todaysMood && !justLogged) {
     const mood = moodById[todaysMood.mood];
@@ -59,10 +63,21 @@ export default function MoodCheckIn() {
       </View>
 
       {justLogged ? (
-        <View style={styles.loggedRow}>
-          <Text style={styles.loggedEmoji}>✅</Text>
-          <Text style={styles.loggedText}>Logged! Your pet feels the love.</Text>
-        </View>
+        <>
+          <View style={styles.loggedRow}>
+            <Text style={styles.loggedEmoji}>✅</Text>
+            <Text style={styles.loggedText}>Logged! Your pet feels the love.</Text>
+          </View>
+          {suggestCalm && (
+            <TouchableOpacity style={styles.calmSuggestion} onPress={() => router.push('/calm')}>
+              <Wind size={18} color="#3F6E8C" />
+              <Text style={styles.calmSuggestionText}>
+                Rough day? Try a 2-minute breathing exercise
+              </Text>
+              <ChevronRight size={16} color="#3F6E8C" />
+            </TouchableOpacity>
+          )}
+        </>
       ) : (
         <>
           <View style={styles.moodRow}>
@@ -177,5 +192,20 @@ const styles = StyleSheet.create({
   doneTextWrap: {
     flex: 1,
     gap: 4,
+  },
+  calmSuggestion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: '#E8F4FB',
+    borderRadius: theme.borderRadius.sm,
+    padding: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
+  },
+  calmSuggestionText: {
+    flex: 1,
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 13,
+    color: '#3F6E8C',
   },
 });

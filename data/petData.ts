@@ -331,4 +331,5 @@ export const achievements: Achievement[] = [
   { id: 'mood-streak-3', name: 'Checking In', description: 'Log your mood 3 days in a row', emoji: '📝', points: 75 },
   { id: 'mood-streak-7', name: 'Mindful Week', description: 'Log your mood 7 days in a row', emoji: '🧘', points: 200 },
   { id: 'trailblazer-1', name: 'Trailblazer', description: 'Complete a walk on a nearby trail', emoji: '🥾', points: 100 },
+  { id: 'calm-1', name: 'Calm Corner', description: 'Complete a breathing or grounding exercise', emoji: '🌬️', points: 75 },
 ];

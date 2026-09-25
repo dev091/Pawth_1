@@ -10,7 +10,7 @@ import MoodCheckIn from '@/components/MoodCheckIn';
 import { usePet } from '@/context/PetContext';
 import { getEvolutionStage, evolutionStages, getPetMood } from '@/data/petData';
 import { theme } from '@/constants/theme';
-import { Bell, Flame, TreePine, ChevronRight, MessageCircle } from 'lucide-react-native';
+import { Bell, Flame, TreePine, ChevronRight, MessageCircle, Wind } from 'lucide-react-native';
 
 // Sky palette per time of day — turns the pet's stage into a little scene
 // instead of a plain white card.
@@ -189,6 +189,22 @@ export default function HomeScreen() {
         <View style={styles.trailsTextWrap}>
           <Text style={styles.trailsTitle}>Nearby Trails</Text>
           <Text style={styles.trailsSubtitle}>Take your pet for a real walk outside</Text>
+        </View>
+        <ChevronRight size={20} color={theme.colors.gray} />
+      </TouchableOpacity>
+
+      {/* Calm Corner entry */}
+      <TouchableOpacity
+        style={styles.calmCard}
+        activeOpacity={0.85}
+        onPress={() => router.push('/calm')}
+      >
+        <View style={styles.calmIconWrap}>
+          <Wind size={22} color="#6FB8DE" />
+        </View>
+        <View style={styles.trailsTextWrap}>
+          <Text style={styles.trailsTitle}>Calm Corner</Text>
+          <Text style={styles.trailsSubtitle}>Guided breathing & grounding, whenever you need it</Text>
         </View>
         <ChevronRight size={20} color={theme.colors.gray} />
       </TouchableOpacity>
@@ -429,6 +445,24 @@ const styles = StyleSheet.create({
   },
   trailsTextWrap: {
     flex: 1,
+  },
+  calmCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    ...theme.shadows.small,
+  },
+  calmIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E8F4FB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
   },
   trailsTitle: {
     fontFamily: theme.fonts.bold,
