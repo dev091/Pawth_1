@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { Chrome as Home, Store, Heart, User, Gamepad2 } from 'lucide-react-native';
+import { Chrome as Home, Store, Heart, User, Gamepad2, Sparkles } from 'lucide-react-native';
 import { theme } from '@/constants/theme';
 
 export default function TabLayout() {
@@ -39,6 +39,15 @@ export default function TabLayout() {
           title: 'Care',
           tabBarIcon: ({ color, size }) => (
             <Heart size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="toolkit"
+        options={{
+          title: 'Toolkit',
+          tabBarIcon: ({ color, size }) => (
+            <Sparkles size={size} color={color} />
           ),
         }}
       />

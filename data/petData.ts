@@ -100,6 +100,53 @@ export interface MoodEntry {
   loggedAt: string;
 }
 
+// ---------------------------------------------------------------------------
+// Happy Energy Jar: a gratitude jar for small good moments.
+// ---------------------------------------------------------------------------
+
+export interface HappyEnergyEntry {
+  id: string;
+  text: string;
+  date: string;
+}
+
+// ---------------------------------------------------------------------------
+// Affirmations & Book of Answers: quick self-care utility content.
+// ---------------------------------------------------------------------------
+
+export const affirmations: string[] = [
+  "I am doing the best I can, and that's enough.",
+  'My feelings are valid, even the hard ones.',
+  'I am allowed to rest without earning it.',
+  'Small steps still move me forward.',
+  'I am proud of how far I have come.',
+  'I choose to be gentle with myself today.',
+  'I am worthy of love and care, especially from myself.',
+  'This moment is hard, but it is not permanent.',
+  'I trust myself to handle whatever comes next.',
+  'I am growing, even when I cannot see it.',
+  'My pace is my own — comparison steals my joy.',
+  'I deserve the same kindness I give to others.',
+  'Every breath is a chance to start again.',
+  'I am safe in this moment.',
+  'I release what I cannot control.',
+];
+
+export const magicAnswers: string[] = [
+  'Yes, trust the timing.',
+  'Not right now — give it space.',
+  'The answer is closer than you think.',
+  'Ask again after you rest.',
+  "It's already changing for the better.",
+  'Look for the small win, not the big one.',
+  'Yes, but on your own terms.',
+  'Let it go for today.',
+  'The first step is smaller than you think.',
+  'You already know the answer.',
+  'Wait for a calmer moment to decide.',
+  'This is a good day to be kind to yourself.',
+];
+
 export interface DailyTask {
   id: string;
   description: string;
@@ -332,4 +379,5 @@ export const achievements: Achievement[] = [
   { id: 'mood-streak-7', name: 'Mindful Week', description: 'Log your mood 7 days in a row', emoji: '🧘', points: 200 },
   { id: 'trailblazer-1', name: 'Trailblazer', description: 'Complete a walk on a nearby trail', emoji: '🥾', points: 100 },
   { id: 'calm-1', name: 'Calm Corner', description: 'Complete a breathing or grounding exercise', emoji: '🌬️', points: 75 },
+  { id: 'jar-1', name: 'Happy Energy', description: 'Add your first moment to the Happy Energy Jar', emoji: '🫙', points: 50 },
 ];

@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '@/constants/theme';
 import Pet from '@/components/Pet';
+import PawPattern from '@/components/PawPattern';
 import CareActionButton from '@/components/CareActionButton';
 import CustomizationShop from '@/components/CustomizationShop';
 import { usePet } from '@/context/PetContext';
@@ -157,6 +158,7 @@ export default function CareScreen() {
         end={{ x: 0, y: 1 }}
         style={styles.petScene}
       >
+        <PawPattern color="rgba(255,255,255,0.25)" />
         <Text style={[styles.decor, styles.cloudLeft]}>☁️</Text>
         <Text style={[styles.decor, styles.cloudRight]}>☁️</Text>
         <View style={styles.petContainer}>

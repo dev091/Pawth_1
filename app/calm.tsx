@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { usePet } from '@/context/PetContext';
 import { theme } from '@/constants/theme';
@@ -27,7 +27,10 @@ const GROUNDING_STEPS = [
 ];
 
 export default function CalmScreen() {
-  const [mode, setMode] = useState<Mode>('menu');
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const initialMode: Mode =
+    params.mode === 'breathing' || params.mode === 'grounding' ? params.mode : 'menu';
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [reward, setReward] = useState<{ xp: number; points: number } | null>(null);
   const { completeCalmSession } = usePet();
 

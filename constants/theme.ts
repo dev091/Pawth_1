@@ -25,6 +25,7 @@ export const theme = {
     regular: 'Nunito-Regular',
     semiBold: 'Nunito-SemiBold',
     bold: 'Nunito-Bold',
+    extraBold: 'Nunito-ExtraBold',
   },
   spacing: {
     xs: 4,
@@ -57,4 +58,31 @@ export const theme = {
       elevation: 5,
     },
   },
+};
+
+// ---------------------------------------------------------------------------
+// Candy-bright accents for the Toolkit grid — bold flat colors (not pastel),
+// inspired by playful self-care "journey" apps rather than muted wellness UI.
+// ---------------------------------------------------------------------------
+export const toolColors = {
+  purple: '#6C5CE7',
+  purpleDark: '#5A4BD1',
+  pink: '#F0507A',
+  blue: '#4FA8E0',
+  orange: '#FFA726',
+  navy: '#1B2A5C',
+  teal: '#26A69A',
+  amber: '#F0A030',
+  brown: '#8D6E63',
+};
+
+// ---------------------------------------------------------------------------
+// Three-band outdoor "scene" gradients (sky / horizon / ground) used behind
+// hero content — a recurring structural motif in journey/exploration-style
+// self-care apps.
+// ---------------------------------------------------------------------------
+export const sceneBands = {
+  day: ['#8FD4F0', '#5FA8D8', '#F5C572'] as [string, string, string],
+  meadow: ['#9AD9F0', '#6FBF8F', '#4FA96B'] as [string, string, string],
+  dusk: ['#8478D6', '#6B5FC4', '#5A4BD1'] as [string, string, string],
 };

@@ -4,13 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Pet from '@/components/Pet';
+import PawPattern from '@/components/PawPattern';
 import StatusIndicator from '@/components/StatusIndicator';
 import DailyTasks from '@/components/DailyTasks';
 import MoodCheckIn from '@/components/MoodCheckIn';
 import { usePet } from '@/context/PetContext';
 import { getEvolutionStage, evolutionStages, getPetMood } from '@/data/petData';
-import { theme } from '@/constants/theme';
-import { Bell, Flame, TreePine, ChevronRight, MessageCircle, Wind } from 'lucide-react-native';
+import { theme, toolColors } from '@/constants/theme';
+import { Bell, Flame, ChevronRight, MessageCircle, Sparkles } from 'lucide-react-native';
 
 // Sky palette per time of day — turns the pet's stage into a little scene
 // instead of a plain white card.
@@ -128,6 +129,7 @@ export default function HomeScreen() {
         end={{ x: 0, y: 1 }}
         style={styles.sceneCard}
       >
+        <PawPattern color={timeOfDay === 'night' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.25)'} />
         {timeOfDay === 'night' ? (
           <>
             <Text style={[styles.decor, styles.starTopLeft]}>✨</Text>
@@ -177,36 +179,20 @@ export default function HomeScreen() {
       {/* Mood check-in */}
       <MoodCheckIn />
 
-      {/* Nearby Trails entry */}
+      {/* Toolkit teaser */}
       <TouchableOpacity
-        style={styles.trailsCard}
+        style={styles.toolkitBanner}
         activeOpacity={0.85}
-        onPress={() => router.push('/trails')}
+        onPress={() => router.push('/(tabs)/toolkit')}
       >
-        <View style={styles.trailsIconWrap}>
-          <TreePine size={22} color={theme.colors.primary} />
+        <View style={styles.toolkitIconWrap}>
+          <Sparkles size={22} color="white" />
         </View>
         <View style={styles.trailsTextWrap}>
-          <Text style={styles.trailsTitle}>Nearby Trails</Text>
-          <Text style={styles.trailsSubtitle}>Take your pet for a real walk outside</Text>
+          <Text style={styles.toolkitTitle}>Self-Care Toolkit</Text>
+          <Text style={styles.toolkitSubtitle}>Breathing, trails, affirmations & more</Text>
         </View>
-        <ChevronRight size={20} color={theme.colors.gray} />
-      </TouchableOpacity>
-
-      {/* Calm Corner entry */}
-      <TouchableOpacity
-        style={styles.calmCard}
-        activeOpacity={0.85}
-        onPress={() => router.push('/calm')}
-      >
-        <View style={styles.calmIconWrap}>
-          <Wind size={22} color="#6FB8DE" />
-        </View>
-        <View style={styles.trailsTextWrap}>
-          <Text style={styles.trailsTitle}>Calm Corner</Text>
-          <Text style={styles.trailsSubtitle}>Guided breathing & grounding, whenever you need it</Text>
-        </View>
-        <ChevronRight size={20} color={theme.colors.gray} />
+        <ChevronRight size={20} color="rgba(255,255,255,0.8)" />
       </TouchableOpacity>
 
       {/* Pet status indicators */}
@@ -425,54 +411,36 @@ const styles = StyleSheet.create({
   nextStageTextNight: {
     color: 'rgba(255,255,255,0.75)',
   },
-  trailsCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
-    ...theme.shadows.small,
-  },
-  trailsIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#EAFBF9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.spacing.md,
-  },
   trailsTextWrap: {
     flex: 1,
   },
-  calmCard: {
+  toolkitBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.card,
+    backgroundColor: toolColors.purple,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.lg,
     ...theme.shadows.small,
   },
-  calmIconWrap: {
+  toolkitIconWrap: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#E8F4FB',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.md,
   },
-  trailsTitle: {
+  toolkitTitle: {
     fontFamily: theme.fonts.bold,
     fontSize: 15,
-    color: theme.colors.text,
+    color: 'white',
   },
-  trailsSubtitle: {
+  toolkitSubtitle: {
     fontFamily: theme.fonts.regular,
     fontSize: 12,
-    color: theme.colors.subtext,
+    color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
   },
   statusContainer: {
