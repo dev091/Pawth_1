@@ -55,6 +55,15 @@ export default function RootLayout() {
             headerTitleStyle: { fontFamily: 'Nunito-Bold' },
           }}
         />
+        <Stack.Screen
+          name="pet-chat"
+          options={{
+            headerShown: true,
+            title: 'Chat',
+            headerStyle: { backgroundColor: '#FCFCFC' },
+            headerTitleStyle: { fontFamily: 'Nunito-Bold' },
+          }}
+        />
         <Stack.Screen name="+not-found" options={{ title: 'Oops!' }} />
       </Stack>
       <DailyRewardModal />

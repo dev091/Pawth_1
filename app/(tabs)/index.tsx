@@ -10,7 +10,7 @@ import MoodCheckIn from '@/components/MoodCheckIn';
 import { usePet } from '@/context/PetContext';
 import { getEvolutionStage, evolutionStages, getPetMood } from '@/data/petData';
 import { theme } from '@/constants/theme';
-import { Bell, Flame, TreePine, ChevronRight } from 'lucide-react-native';
+import { Bell, Flame, TreePine, ChevronRight, MessageCircle } from 'lucide-react-native';
 
 // Sky palette per time of day — turns the pet's stage into a little scene
 // instead of a plain white card.
@@ -164,6 +164,14 @@ export default function HomeScreen() {
             </Text>
           )}
         </View>
+
+        <TouchableOpacity
+          style={styles.chatFab}
+          activeOpacity={0.85}
+          onPress={() => router.push('/pet-chat')}
+        >
+          <MessageCircle size={20} color={theme.colors.primary} />
+        </TouchableOpacity>
       </LinearGradient>
 
       {/* Mood check-in */}
@@ -379,6 +387,18 @@ const styles = StyleSheet.create({
     top: 16,
     right: 22,
     fontSize: 26,
+  },
+  chatFab: {
+    position: 'absolute',
+    bottom: theme.spacing.md,
+    right: theme.spacing.md,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...theme.shadows.small,
   },
   stageBadgeNight: {
     backgroundColor: 'rgba(255,255,255,0.15)',

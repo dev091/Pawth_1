@@ -72,6 +72,7 @@ interface SaveData {
   soundEnabled: boolean;
   moodEntries: MoodEntry[];
   trailsWalked: number;
+  lastChatDay: string | null;
   savedAt: string;
 }
 
@@ -103,6 +104,8 @@ interface PetContextType {
   logMood: (mood: MoodType, note?: string) => void;
   trailsWalked: number;
   completeTrailWalk: (minutes: number) => { xp: number; points: number };
+  chatBonusAvailable: boolean;
+  recordChatInteraction: () => void;
   adoptPet: (type: PetType, name: string) => void;
   selectPet: (id: string) => void;
   performCareAction: (action: CareAction) => void;
@@ -184,6 +187,7 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
   const celebratedStageRef = useRef<Record<string, string>>({});
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [trailsWalked, setTrailsWalked] = useState(0);
+  const [lastChatDay, setLastChatDay] = useState<string | null>(null);
 
   const soundEnabledRef = useRef(soundEnabled);
   useEffect(() => {
@@ -265,6 +269,7 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
           setSoundEnabled(data.soundEnabled ?? true);
           setMoodEntries(data.moodEntries ?? []);
           setTrailsWalked(data.trailsWalked ?? 0);
+          setLastChatDay(data.lastChatDay ?? null);
           handleDailyLogin(data.streak ?? 0, data.lastLoginDay ?? null);
         } else {
           // First launch: seed a starter pet and a welcome reward.
@@ -308,10 +313,11 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
       soundEnabled,
       moodEntries,
       trailsWalked,
+      lastChatDay,
       savedAt: new Date().toISOString(),
     };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch(() => {});
-  }, [loaded, pets, currentPetId, points, tasks, streak, lastLoginDay, unlockedAchievements, careActionCount, minigamesPlayed, spinsCount, bestCombo, evolutionsCount, treatBest, lastFreeSpinDay, soundEnabled, moodEntries, trailsWalked]);
+  }, [loaded, pets, currentPetId, points, tasks, streak, lastLoginDay, unlockedAchievements, careActionCount, minigamesPlayed, spinsCount, bestCombo, evolutionsCount, treatBest, lastFreeSpinDay, soundEnabled, moodEntries, trailsWalked, lastChatDay]);
 
   // ---- Live needs decay (1 tick per minute) ----------------------------------
   useEffect(() => {
@@ -633,6 +639,25 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
     return { xp, points: pts };
   };
 
+  const chatBonusAvailable = lastChatDay !== dayKey();
+
+  // First conversation of the day gives the pet a little happiness/points
+  // boost — same "real interaction" logic as the mood check-in.
+  const recordChatInteraction = () => {
+    if (!chatBonusAvailable) return;
+    setLastChatDay(dayKey());
+    if (currentPetId) {
+      setPets(prevPets =>
+        prevPets.map(p =>
+          p.id === currentPetId
+            ? { ...p, stats: { ...p.stats, happiness: Math.min(100, p.stats.happiness + 5) } }
+            : p
+        )
+      );
+    }
+    setPoints(prev => prev + 10);
+  };
+
   const dismissEvolution = () => {
     setEvolutionCelebration(null);
   };
@@ -675,6 +700,8 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
         logMood,
         trailsWalked,
         completeTrailWalk,
+        chatBonusAvailable,
+        recordChatInteraction,
         adoptPet,
         selectPet,
         performCareAction,
