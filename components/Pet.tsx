@@ -1,7 +1,17 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Image, StyleSheet, Animated, Easing, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { PetType, PetMood, petMoods, petTypes, accessoryById, getEvolutionStage } from '@/data/petData';
 import { theme } from '@/constants/theme';
+
+// Per-type glow palette for the soft "stage" backdrop behind the pet —
+// gives each species its own elite, premium presence.
+const glowPalette: Record<PetType, [string, string]> = {
+  bird: ['#FFF3D6', '#FFE1A8'],
+  cat: ['#F3E6FF', '#E0C8FF'],
+  dog: ['#FFE9D6', '#FFD1A8'],
+  rabbit: ['#E6FFF3', '#C8FFE0'],
+};
 
 interface PetProps {
   type: PetType;
@@ -205,9 +215,26 @@ export default function Pet({
   const moodInfo = petMoods[mood];
   const bubbleVisible = showMoodBubble && mood !== 'content';
 
+  const glowColors = glowPalette[type];
+
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.petContainer, petAnimatedStyle]}>
+        {size !== 'small' && (
+          <LinearGradient
+            colors={glowColors}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={[
+              styles.glow,
+              {
+                width: sizeStyles[size].width * 1.5,
+                height: sizeStyles[size].width * 1.5,
+                borderRadius: (sizeStyles[size].width * 1.5) / 2,
+              },
+            ]}
+          />
+        )}
         <View style={[styles.imageBox, sizeStyles[size], { transform: [{ scale: stage.scale }] }]}>
           <Image
             source={petData.image}
@@ -228,6 +255,10 @@ export default function Pet({
             </View>
           )}
         </View>
+
+        {size !== 'small' && (
+          <View style={[styles.groundShadow, { width: sizeStyles[size].width * 0.7 }]} />
+        )}
 
         {bubbleVisible && (
           <Animated.View
@@ -276,6 +307,18 @@ const styles = StyleSheet.create({
   imageBox: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  glow: {
+    position: 'absolute',
+    opacity: 0.9,
+  },
+  groundShadow: {
+    position: 'absolute',
+    bottom: -6,
+    height: 14,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+    transform: [{ scaleX: 1.6 }],
   },
   petImage: {
     width: '100%',

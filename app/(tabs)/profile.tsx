@@ -8,6 +8,7 @@ import {
   Switch
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '@/constants/theme';
 import { usePet } from '@/context/PetContext';
 import { achievements, getPetMood } from '@/data/petData';
@@ -98,8 +99,13 @@ export default function ProfileScreen() {
       {currentPet && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Current Pet</Text>
-          <View style={styles.currentPetCard}>
-            <Pet 
+          <LinearGradient
+            colors={['#F3E6FF', '#E0C8FF']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.currentPetCard}
+          >
+            <Pet
               type={currentPet.type}
               name={currentPet.name}
               level={currentPet.level}
@@ -108,7 +114,7 @@ export default function ProfileScreen() {
               mood={getPetMood(currentPet.stats)}
               showMoodBubble
             />
-          </View>
+          </LinearGradient>
         </View>
       )}
 
@@ -396,10 +402,10 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs,
   },
   currentPetCard: {
-    backgroundColor: 'white',
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     alignItems: 'center',
+    overflow: 'hidden',
     ...theme.shadows.small,
   },
   petsScrollContainer: {

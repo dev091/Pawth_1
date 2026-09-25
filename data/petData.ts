@@ -67,6 +67,39 @@ export const petMoods: Record<PetMood, { emoji: string; text: string }> = {
   content: { emoji: '💭', text: 'Pawth life!' },
 };
 
+// ---------------------------------------------------------------------------
+// Mood tracker: the human's own daily mood check-in (Finch-style journaling).
+// ---------------------------------------------------------------------------
+
+export type MoodType = 'great' | 'good' | 'okay' | 'low' | 'awful';
+
+export interface MoodOption {
+  id: MoodType;
+  emoji: string;
+  label: string;
+  /** Happiness bonus granted to the active pet for checking in with this mood. */
+  petBonus: number;
+}
+
+export const moodOptions: MoodOption[] = [
+  { id: 'great', emoji: '😄', label: 'Great', petBonus: 8 },
+  { id: 'good', emoji: '🙂', label: 'Good', petBonus: 6 },
+  { id: 'okay', emoji: '😐', label: 'Okay', petBonus: 4 },
+  { id: 'low', emoji: '😔', label: 'Low', petBonus: 4 },
+  { id: 'awful', emoji: '😢', label: 'Awful', petBonus: 4 },
+];
+
+export const moodById: Record<MoodType, MoodOption> =
+  Object.fromEntries(moodOptions.map(m => [m.id, m])) as Record<MoodType, MoodOption>;
+
+export interface MoodEntry {
+  /** Local calendar-day key, e.g. "2026-09-15" */
+  date: string;
+  mood: MoodType;
+  note: string;
+  loggedAt: string;
+}
+
 export interface DailyTask {
   id: string;
   description: string;
@@ -295,4 +328,7 @@ export const achievements: Achievement[] = [
   { id: 'spinner-1', name: 'Feeling Lucky', description: 'Spin the Lucky Reel', emoji: '🎰', points: 25 },
   { id: 'combo-10', name: 'Combo Master', description: 'Reach a 10x combo in Treat Catch', emoji: '⚡', points: 100 },
   { id: 'evolved-1', name: 'Evolution!', description: 'Evolve a pet to a new stage', emoji: '🦋', points: 150 },
+  { id: 'mood-streak-3', name: 'Checking In', description: 'Log your mood 3 days in a row', emoji: '📝', points: 75 },
+  { id: 'mood-streak-7', name: 'Mindful Week', description: 'Log your mood 7 days in a row', emoji: '🧘', points: 200 },
+  { id: 'trailblazer-1', name: 'Trailblazer', description: 'Complete a walk on a nearby trail', emoji: '🥾', points: 100 },
 ];

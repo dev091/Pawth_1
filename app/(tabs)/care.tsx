@@ -8,6 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '@/constants/theme';
 import Pet from '@/components/Pet';
 import CareActionButton from '@/components/CareActionButton';
@@ -150,15 +151,24 @@ export default function CareScreen() {
       <Text style={styles.title}>Care for {currentPet.name}</Text>
       
       {/* Pet animation */}
-      <View style={styles.petContainer}>
-        <Pet 
-          type={currentPet.type}
-          name={currentPet.name}
-          level={currentPet.level}
-          animation={activeFeedback ? 'happy' : 'idle'}
-          accessoryId={currentPet.activeCustomization}
-        />
-      </View>
+      <LinearGradient
+        colors={['#E3F6FF', '#C7ECFF']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.petScene}
+      >
+        <Text style={[styles.decor, styles.cloudLeft]}>☁️</Text>
+        <Text style={[styles.decor, styles.cloudRight]}>☁️</Text>
+        <View style={styles.petContainer}>
+          <Pet
+            type={currentPet.type}
+            name={currentPet.name}
+            level={currentPet.level}
+            animation={activeFeedback ? 'happy' : 'idle'}
+            accessoryId={currentPet.activeCustomization}
+          />
+        </View>
+      </LinearGradient>
       
       {/* Care actions */}
       <View style={styles.actionsContainer}>
@@ -279,10 +289,32 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: theme.spacing.lg,
   },
+  petScene: {
+    borderRadius: theme.borderRadius.xl,
+    paddingVertical: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    overflow: 'hidden',
+    position: 'relative',
+    ...theme.shadows.medium,
+  },
+  decor: {
+    position: 'absolute',
+    opacity: 0.9,
+  },
+  cloudLeft: {
+    top: 16,
+    left: 20,
+    fontSize: 26,
+  },
+  cloudRight: {
+    top: 36,
+    right: 24,
+    fontSize: 20,
+  },
   petContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.lg,
   },
   actionsContainer: {
     marginBottom: theme.spacing.lg,

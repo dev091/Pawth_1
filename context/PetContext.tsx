@@ -16,6 +16,9 @@ import {
   SPIN_COST,
   EvolutionStage,
   getEvolutionStage,
+  MoodType,
+  MoodEntry,
+  moodById,
 } from '@/data/petData';
 
 const STORAGE_KEY = '@pawth:save:v2';
@@ -67,6 +70,8 @@ interface SaveData {
   treatBest: number;
   lastFreeSpinDay: string | null;
   soundEnabled: boolean;
+  moodEntries: MoodEntry[];
+  trailsWalked: number;
   savedAt: string;
 }
 
@@ -92,6 +97,12 @@ interface PetContextType {
   spinWheel: () => { reward: SpinReward; cost: number; targetIndex: number; fullTurns: number } | null;
   recordCombo: (combo: number) => void;
   recordTreatScore: (score: number) => void;
+  moodEntries: MoodEntry[];
+  todaysMood: MoodEntry | null;
+  moodStreak: number;
+  logMood: (mood: MoodType, note?: string) => void;
+  trailsWalked: number;
+  completeTrailWalk: (minutes: number) => { xp: number; points: number };
   adoptPet: (type: PetType, name: string) => void;
   selectPet: (id: string) => void;
   performCareAction: (action: CareAction) => void;
@@ -171,6 +182,8 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
   const [lastFreeSpinDay, setLastFreeSpinDay] = useState<string | null>(null);
   const [evolutionCelebration, setEvolutionCelebration] = useState<EvolutionCelebration | null>(null);
   const celebratedStageRef = useRef<Record<string, string>>({});
+  const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
+  const [trailsWalked, setTrailsWalked] = useState(0);
 
   const soundEnabledRef = useRef(soundEnabled);
   useEffect(() => {
@@ -178,6 +191,23 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
   }, [soundEnabled]);
 
   const currentPet = pets.find(p => p.id === currentPetId) ?? null;
+
+  const todaysMood = moodEntries.find(m => m.date === dayKey()) ?? null;
+
+  // Consecutive days (ending today or yesterday) with a mood check-in logged.
+  const moodStreak = (() => {
+    if (moodEntries.length === 0) return 0;
+    const dates = new Set(moodEntries.map(m => m.date));
+    const today = dayKey();
+    let offset = dates.has(today) ? 0 : 1;
+    if (!dates.has(dayKey(-offset))) return 0;
+    let streakCount = 0;
+    while (dates.has(dayKey(-offset))) {
+      streakCount++;
+      offset++;
+    }
+    return streakCount;
+  })();
 
   // ---- Daily login / streak ------------------------------------------------
   const grantDailyReward = (day: number) => {
@@ -233,6 +263,8 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
           setTreatBest(data.treatBest ?? 0);
           setLastFreeSpinDay(data.lastFreeSpinDay ?? null);
           setSoundEnabled(data.soundEnabled ?? true);
+          setMoodEntries(data.moodEntries ?? []);
+          setTrailsWalked(data.trailsWalked ?? 0);
           handleDailyLogin(data.streak ?? 0, data.lastLoginDay ?? null);
         } else {
           // First launch: seed a starter pet and a welcome reward.
@@ -274,10 +306,12 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
       treatBest,
       lastFreeSpinDay,
       soundEnabled,
+      moodEntries,
+      trailsWalked,
       savedAt: new Date().toISOString(),
     };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch(() => {});
-  }, [loaded, pets, currentPetId, points, tasks, streak, lastLoginDay, unlockedAchievements, careActionCount, minigamesPlayed, spinsCount, bestCombo, evolutionsCount, treatBest, lastFreeSpinDay, soundEnabled]);
+  }, [loaded, pets, currentPetId, points, tasks, streak, lastLoginDay, unlockedAchievements, careActionCount, minigamesPlayed, spinsCount, bestCombo, evolutionsCount, treatBest, lastFreeSpinDay, soundEnabled, moodEntries, trailsWalked]);
 
   // ---- Live needs decay (1 tick per minute) ----------------------------------
   useEffect(() => {
@@ -320,6 +354,9 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
         case 'spinner-1': return spinsCount >= 1;
         case 'combo-10': return bestCombo >= 10;
         case 'evolved-1': return evolutionsCount >= 1;
+        case 'mood-streak-3': return moodStreak >= 3;
+        case 'mood-streak-7': return moodStreak >= 7;
+        case 'trailblazer-1': return trailsWalked >= 1;
         default: return false;
       }
     };
@@ -329,7 +366,7 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
       setPoints(prev => prev + newly.reduce((sum, a) => sum + a.points, 0));
       setAchievementToast(newly[0]);
     }
-  }, [loaded, pets, careActionCount, minigamesPlayed, streak, points, unlockedAchievements, spinsCount, bestCombo, evolutionsCount]);
+  }, [loaded, pets, careActionCount, minigamesPlayed, streak, points, unlockedAchievements, spinsCount, bestCombo, evolutionsCount, moodStreak, trailsWalked]);
 
   // ---- Evolution celebration --------------------------------------------------
   // Watches each pet's evolution stage; when a stage advances, queue a
@@ -558,6 +595,44 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
     setTreatBest(prev => Math.max(prev, score));
   };
 
+  // ---- Mood tracker -----------------------------------------------------------
+  // Logging a mood is a real-world self-care habit: it always nudges the
+  // active pet's happiness up a little, regardless of how the day went.
+  const logMood = (mood: MoodType, note: string = '') => {
+    const today = dayKey();
+    const entry: MoodEntry = { date: today, mood, note, loggedAt: new Date().toISOString() };
+    setMoodEntries(prev => [...prev.filter(m => m.date !== today), entry]);
+
+    const bonus = moodById[mood].petBonus;
+    if (currentPetId) {
+      setPets(prevPets =>
+        prevPets.map(p =>
+          p.id === currentPetId
+            ? { ...p, stats: { ...p.stats, happiness: Math.min(100, p.stats.happiness + bonus) } }
+            : p
+        )
+      );
+    }
+    playSound('https://assets.mixkit.co/active_storage/sfx/2576/2576-preview.mp3');
+  };
+
+  // ---- Nearby Trails -----------------------------------------------------------
+  // Rewards a completed real-world walk with pet XP and points, same payout
+  // shape as the minigames.
+  const completeTrailWalk = (minutes: number) => {
+    const xp = Math.max(5, Math.round(minutes * 2));
+    const pts = Math.max(10, Math.round(minutes * 4));
+    if (currentPetId) {
+      setPets(prevPets =>
+        prevPets.map(p => (p.id === currentPetId ? addExperience(p, xp) : p))
+      );
+    }
+    setPoints(prev => prev + pts);
+    setTrailsWalked(n => n + 1);
+    playSound('https://assets.mixkit.co/active_storage/sfx/2576/2576-preview.mp3');
+    return { xp, points: pts };
+  };
+
   const dismissEvolution = () => {
     setEvolutionCelebration(null);
   };
@@ -594,6 +669,12 @@ export const PetProvider = ({ children }: { children: ReactNode }) => {
         spinWheel,
         recordCombo,
         recordTreatScore,
+        moodEntries,
+        todaysMood,
+        moodStreak,
+        logMood,
+        trailsWalked,
+        completeTrailWalk,
         adoptPet,
         selectPet,
         performCareAction,

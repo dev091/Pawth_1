@@ -1,16 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import Pet from '@/components/Pet';
 import StatusIndicator from '@/components/StatusIndicator';
 import DailyTasks from '@/components/DailyTasks';
+import MoodCheckIn from '@/components/MoodCheckIn';
 import { usePet } from '@/context/PetContext';
 import { getEvolutionStage, evolutionStages, getPetMood } from '@/data/petData';
 import { theme } from '@/constants/theme';
-import { Bell, Flame } from 'lucide-react-native';
+import { Bell, Flame, TreePine, ChevronRight } from 'lucide-react-native';
+
+// Sky palette per time of day — turns the pet's stage into a little scene
+// instead of a plain white card.
+const scenePalette: Record<'morning' | 'afternoon' | 'evening' | 'night', [string, string]> = {
+  morning: ['#FFF6E0', '#FFE8C2'],
+  afternoon: ['#E3F6FF', '#C7ECFF'],
+  evening: ['#FFE3D6', '#FFC9C9'],
+  night: ['#2A2F5C', '#171A38'],
+};
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { currentPet, streak } = usePet();
   const [petAnimation, setPetAnimation] = useState<'idle' | 'happy' | 'sad' | 'sleeping'>('idle');
   const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening' | 'night'>('morning');
@@ -108,27 +121,69 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Pet display area */}
-      <View style={styles.petContainer}>
-        <Pet 
-          type={currentPet.type}
-          name={currentPet.name}
-          level={currentPet.level}
-          animation={petAnimation}
-          accessoryId={currentPet.activeCustomization}
-          mood={getPetMood(currentPet.stats)}
-          showMoodBubble
-        />
-        <View style={styles.stageBadge}>
-          <Text style={styles.stageEmoji}>{stage.emoji}</Text>
-          <Text style={styles.stageText}>{stage.name}</Text>
-        </View>
-        {nextStage && (
-          <Text style={styles.nextStageText}>
-            Evolves to {nextStage.name} {nextStage.emoji} at Lv. {nextStage.minLevel}
-          </Text>
+      {/* Pet display area — a cozy little scene, Finch-style */}
+      <LinearGradient
+        colors={scenePalette[timeOfDay]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.sceneCard}
+      >
+        {timeOfDay === 'night' ? (
+          <>
+            <Text style={[styles.decor, styles.starTopLeft]}>✨</Text>
+            <Text style={[styles.decor, styles.starTopRight]}>⭐</Text>
+            <Text style={[styles.decor, styles.moonIcon]}>🌙</Text>
+          </>
+        ) : (
+          <>
+            <Text style={[styles.decor, styles.cloudLeft]}>☁️</Text>
+            <Text style={[styles.decor, styles.cloudRight]}>☁️</Text>
+            {timeOfDay !== 'evening' && <Text style={[styles.decor, styles.sunIcon]}>☀️</Text>}
+          </>
         )}
-      </View>
+
+        <View style={styles.petContainer}>
+          <Pet
+            type={currentPet.type}
+            name={currentPet.name}
+            level={currentPet.level}
+            animation={petAnimation}
+            accessoryId={currentPet.activeCustomization}
+            mood={getPetMood(currentPet.stats)}
+            showMoodBubble
+          />
+          <View style={[styles.stageBadge, timeOfDay === 'night' && styles.stageBadgeNight]}>
+            <Text style={styles.stageEmoji}>{stage.emoji}</Text>
+            <Text style={[styles.stageText, timeOfDay === 'night' && styles.stageTextNight]}>
+              {stage.name}
+            </Text>
+          </View>
+          {nextStage && (
+            <Text style={[styles.nextStageText, timeOfDay === 'night' && styles.nextStageTextNight]}>
+              Evolves to {nextStage.name} {nextStage.emoji} at Lv. {nextStage.minLevel}
+            </Text>
+          )}
+        </View>
+      </LinearGradient>
+
+      {/* Mood check-in */}
+      <MoodCheckIn />
+
+      {/* Nearby Trails entry */}
+      <TouchableOpacity
+        style={styles.trailsCard}
+        activeOpacity={0.85}
+        onPress={() => router.push('/trails')}
+      >
+        <View style={styles.trailsIconWrap}>
+          <TreePine size={22} color={theme.colors.primary} />
+        </View>
+        <View style={styles.trailsTextWrap}>
+          <Text style={styles.trailsTitle}>Nearby Trails</Text>
+          <Text style={styles.trailsSubtitle}>Take your pet for a real walk outside</Text>
+        </View>
+        <ChevronRight size={20} color={theme.colors.gray} />
+      </TouchableOpacity>
 
       {/* Pet status indicators */}
       <View style={styles.statusContainer}>
@@ -277,10 +332,94 @@ const styles = StyleSheet.create({
     color: theme.colors.subtext,
     marginTop: theme.spacing.xs,
   },
+  sceneCard: {
+    borderRadius: theme.borderRadius.xl,
+    paddingVertical: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    overflow: 'hidden',
+    position: 'relative',
+    ...theme.shadows.medium,
+  },
   petContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: theme.spacing.lg,
+  },
+  decor: {
+    position: 'absolute',
+    fontSize: 22,
+    opacity: 0.9,
+  },
+  cloudLeft: {
+    top: 16,
+    left: 20,
+    fontSize: 26,
+  },
+  cloudRight: {
+    top: 36,
+    right: 24,
+    fontSize: 20,
+  },
+  sunIcon: {
+    top: 14,
+    right: 20,
+    fontSize: 24,
+  },
+  starTopLeft: {
+    top: 18,
+    left: 28,
+    fontSize: 16,
+  },
+  starTopRight: {
+    top: 40,
+    right: 40,
+    fontSize: 14,
+  },
+  moonIcon: {
+    top: 16,
+    right: 22,
+    fontSize: 26,
+  },
+  stageBadgeNight: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  stageTextNight: {
+    color: '#FFE8C2',
+  },
+  nextStageTextNight: {
+    color: 'rgba(255,255,255,0.75)',
+  },
+  trailsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    ...theme.shadows.small,
+  },
+  trailsIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EAFBF9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
+  },
+  trailsTextWrap: {
+    flex: 1,
+  },
+  trailsTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 15,
+    color: theme.colors.text,
+  },
+  trailsSubtitle: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: theme.colors.subtext,
+    marginTop: 2,
   },
   statusContainer: {
     backgroundColor: 'white',

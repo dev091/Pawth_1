@@ -37,6 +37,24 @@ export default function RootLayout() {
     <PetProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="mood-history"
+          options={{
+            headerShown: true,
+            title: 'Mood History',
+            headerStyle: { backgroundColor: '#FCFCFC' },
+            headerTitleStyle: { fontFamily: 'Nunito-Bold' },
+          }}
+        />
+        <Stack.Screen
+          name="trails"
+          options={{
+            headerShown: true,
+            title: 'Nearby Trails',
+            headerStyle: { backgroundColor: '#FCFCFC' },
+            headerTitleStyle: { fontFamily: 'Nunito-Bold' },
+          }}
+        />
         <Stack.Screen name="+not-found" options={{ title: 'Oops!' }} />
       </Stack>
       <DailyRewardModal />

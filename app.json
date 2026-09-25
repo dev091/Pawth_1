@@ -1,7 +1,8 @@
 {
   "expo": {
     "android": {
-      "package": "com.pawth.app"
+      "package": "com.pawth.app",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
     },
     "experiments": {
       "typedRoutes": true
@@ -15,7 +16,13 @@
     "newArchEnabled": true,
     "orientation": "portrait",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pawth uses your location to find nearby trails and parks for walks with your pet."
+        }
+      ]
     ],
     "scheme": "pawth",
     "slug": "pawth",
