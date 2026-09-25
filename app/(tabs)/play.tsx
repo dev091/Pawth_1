@@ -120,6 +120,11 @@ function GameMenu({ onSelect, petName }: { onSelect: (s: Screen) => void; petNam
         </View>
         <Text style={styles.gameArrow}>›</Text>
       </TouchableOpacity>
+
+      <View style={styles.comingSoonCard}>
+        <Text style={styles.comingSoonEmoji}>✨</Text>
+        <Text style={styles.comingSoonText}>More games are on the way!</Text>
+      </View>
     </ScrollView>
   );
 }
@@ -471,7 +476,7 @@ const styles = StyleSheet.create({
   gameCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
@@ -525,6 +530,19 @@ const styles = StyleSheet.create({
     color: theme.colors.gray,
     fontWeight: '300',
   },
+  comingSoonCard: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xl,
+    gap: theme.spacing.xs,
+  },
+  comingSoonEmoji: {
+    fontSize: 28,
+  },
+  comingSoonText: {
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 14,
+    color: theme.colors.gray,
+  },
   // Spin screen
   spinContainer: {
     padding: theme.spacing.lg,
@@ -548,7 +566,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.lightGray,
   },

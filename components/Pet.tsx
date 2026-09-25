@@ -257,7 +257,10 @@ export default function Pet({
         </View>
 
         {size !== 'small' && (
-          <View style={[styles.groundShadow, { width: sizeStyles[size].width * 0.7 }]} />
+          <View style={styles.groundShadowWrap} pointerEvents="none">
+            <View style={[styles.groundShadow, styles.groundShadowOuter, { width: sizeStyles[size].width * 0.8 }]} />
+            <View style={[styles.groundShadow, styles.groundShadowInner, { width: sizeStyles[size].width * 0.5 }]} />
+          </View>
         )}
 
         {bubbleVisible && (
@@ -312,13 +315,24 @@ const styles = StyleSheet.create({
     position: 'absolute',
     opacity: 0.9,
   },
+  groundShadowWrap: {
+    position: 'absolute',
+    bottom: -4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   groundShadow: {
     position: 'absolute',
-    bottom: -6,
-    height: 14,
     borderRadius: 999,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    transform: [{ scaleX: 1.6 }],
+    transform: [{ scaleX: 1.7 }],
+  },
+  groundShadowOuter: {
+    height: 16,
+    backgroundColor: 'rgba(60,45,30,0.06)',
+  },
+  groundShadowInner: {
+    height: 8,
+    backgroundColor: 'rgba(60,45,30,0.08)',
   },
   petImage: {
     width: '100%',
@@ -345,7 +359,7 @@ const styles = StyleSheet.create({
     top: -54,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.full,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
@@ -367,7 +381,7 @@ const styles = StyleSheet.create({
     marginLeft: -6,
     width: 12,
     height: 12,
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     transform: [{ rotate: '45deg' }],
   },
   petInfoContainer: {

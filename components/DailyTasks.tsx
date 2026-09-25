@@ -48,7 +48,7 @@ export default function DailyTasks() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginVertical: theme.spacing.md,

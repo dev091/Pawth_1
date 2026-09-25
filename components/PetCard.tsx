@@ -10,6 +10,13 @@ interface PetCardProps {
   selected: boolean;
 }
 
+const backdropColor: Record<PetType, string> = {
+  bird: '#FFF3D6',
+  cat: '#F3E6FF',
+  dog: '#FFE9D6',
+  rabbit: '#E6FFF3',
+};
+
 export default function PetCard({ type, onSelect, selected }: PetCardProps) {
   const petData = petTypes[type];
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -50,11 +57,13 @@ export default function PetCard({ type, onSelect, selected }: PetCardProps) {
         onPress={handlePress}
         activeOpacity={0.9}
       >
-        <Image
-          source={petData.image}
-          style={styles.petImage}
-          resizeMode="contain"
-        />
+        <View style={[styles.imageBackdrop, { backgroundColor: backdropColor[type] }]}>
+          <Image
+            source={petData.image}
+            style={styles.petImage}
+            resizeMode="contain"
+          />
+        </View>
         
         <Text style={styles.petName}>{petData.name}</Text>
         
@@ -74,7 +83,7 @@ const styles = StyleSheet.create({
   cardContainer: {
     width: 160,
     height: 240,
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     marginHorizontal: theme.spacing.sm,
     marginVertical: theme.spacing.md,
@@ -90,10 +99,17 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     alignItems: 'center',
   },
-  petImage: {
-    width: 100,
-    height: 100,
+  imageBackdrop: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: theme.spacing.sm,
+  },
+  petImage: {
+    width: 92,
+    height: 92,
   },
   petName: {
     fontFamily: theme.fonts.bold,

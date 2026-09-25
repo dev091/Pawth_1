@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.md,
   },
   petDetailCard: {
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginTop: theme.spacing.md,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     marginVertical: theme.spacing.md,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     fontFamily: theme.fonts.regular,
@@ -382,8 +382,8 @@ const styles = StyleSheet.create({
   backButton: {
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1.5,
     borderColor: theme.colors.primary,
     marginRight: theme.spacing.sm,
   },
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.full,
     ...theme.shadows.small,
   },
   continueButtonText: {

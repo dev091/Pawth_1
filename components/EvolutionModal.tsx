@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   card: {
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     alignItems: 'center',

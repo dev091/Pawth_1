@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   weekStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.lg,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   entryCard: {
     flexDirection: 'row',
     gap: theme.spacing.md,
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,

@@ -83,7 +83,7 @@ export default function CustomizationShop() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
     marginVertical: theme.spacing.md,

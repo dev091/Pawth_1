@@ -42,7 +42,7 @@ export default function RootLayout() {
           options={{
             headerShown: true,
             title: 'Mood History',
-            headerStyle: { backgroundColor: '#FCFCFC' },
+            headerStyle: { backgroundColor: '#FBF6EE' },
             headerTitleStyle: { fontFamily: 'Nunito-Bold' },
           }}
         />
@@ -51,7 +51,7 @@ export default function RootLayout() {
           options={{
             headerShown: true,
             title: 'Nearby Trails',
-            headerStyle: { backgroundColor: '#FCFCFC' },
+            headerStyle: { backgroundColor: '#FBF6EE' },
             headerTitleStyle: { fontFamily: 'Nunito-Bold' },
           }}
         />
@@ -60,7 +60,7 @@ export default function RootLayout() {
           options={{
             headerShown: true,
             title: 'Chat',
-            headerStyle: { backgroundColor: '#FCFCFC' },
+            headerStyle: { backgroundColor: '#FBF6EE' },
             headerTitleStyle: { fontFamily: 'Nunito-Bold' },
           }}
         />

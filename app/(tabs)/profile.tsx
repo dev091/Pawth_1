@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   },
   statsCard: {
     flexDirection: 'row',
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.xl,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   },
   achievementCard: {
     width: '48%',
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     alignItems: 'center',
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   petItem: {
     width: 100,
     height: 140,
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.sm,
     marginRight: theme.spacing.md,
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     color: theme.colors.subtext,
   },
   settingCard: {
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     overflow: 'hidden',
     ...theme.shadows.small,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,

@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   },
   petBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderBottomLeftRadius: 4,
     ...theme.shadows.small,
   },
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm,
     borderTopWidth: 1,
     borderTopColor: theme.colors.lightGray,
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
   },
   input: {
     flex: 1,

@@ -11,42 +11,40 @@ interface CareActionButtonProps {
   disabled?: boolean;
 }
 
-export default function CareActionButton({ 
-  action, 
-  onPress, 
-  disabled = false 
+export default function CareActionButton({
+  action,
+  onPress,
+  disabled = false,
 }: CareActionButtonProps) {
   const actionData = careActions[action];
 
   const handlePress = () => {
     if (disabled) return;
-    
+
     // Trigger haptic feedback on non-web platforms
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    
+
     onPress();
   };
 
   const renderIcon = () => {
     switch (action) {
       case 'feed':
-        return <Utensils size={24} color="white" />;
+        return <Utensils size={20} color="white" />;
       case 'play':
-        return <Heart size={24} color="white" />;
+        return <Heart size={20} color="white" />;
       case 'sleep':
-        return <Moon size={24} color="white" />;
+        return <Moon size={20} color="white" />;
       case 'clean':
-        return <Droplets size={24} color="white" />;
+        return <Droplets size={20} color="white" />;
       default:
         return null;
     }
   };
 
-  const getBackgroundColor = () => {
-    if (disabled) return theme.colors.lightGray;
-
+  const getAccentColor = () => {
     switch (action) {
       case 'feed':
         return theme.colors.hunger;
@@ -61,44 +59,51 @@ export default function CareActionButton({
     }
   };
 
+  const accent = getAccentColor();
+
   return (
     <TouchableOpacity
       style={[
         styles.button,
-        { backgroundColor: getBackgroundColor() },
-        disabled && styles.disabledButton
+        { backgroundColor: `${accent}1F` },
+        disabled && styles.disabledButton,
       ]}
       onPress={handlePress}
       disabled={disabled}
-      activeOpacity={0.8}
+      activeOpacity={0.75}
     >
-      <View style={styles.icon}>{renderIcon()}</View>
-      <Text style={styles.label}>{actionData.label}</Text>
+      <View style={[styles.iconCircle, { backgroundColor: disabled ? theme.colors.gray : accent }]}>
+        {renderIcon()}
+      </View>
+      <Text style={[styles.label, { color: disabled ? theme.colors.gray : theme.colors.text }]}>
+        {actionData.label}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    width: 80,
-    height: 80,
-    margin: theme.spacing.sm,
-    ...theme.shadows.small,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    gap: theme.spacing.xs,
   },
   disabledButton: {
-    opacity: 0.5,
+    opacity: 0.55,
   },
-  icon: {
-    marginBottom: theme.spacing.xs,
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   label: {
     fontFamily: theme.fonts.semiBold,
-    fontSize: 14,
-    color: 'white',
+    fontSize: 13,
     textAlign: 'center',
   },
 });

@@ -171,31 +171,27 @@ export default function CareScreen() {
       </LinearGradient>
       
       {/* Care actions */}
-      <View style={styles.actionsContainer}>
-        <View style={styles.actionsRow}>
-          <CareActionButton
-            action="feed"
-            onPress={() => handleCareAction('feed')}
-            disabled={!canPerformAction('feed')}
-          />
-          <CareActionButton
-            action="play"
-            onPress={() => handleCareAction('play')}
-            disabled={!canPerformAction('play')}
-          />
-        </View>
-        <View style={styles.actionsRow}>
-          <CareActionButton
-            action="sleep"
-            onPress={() => handleCareAction('sleep')}
-            disabled={!canPerformAction('sleep')}
-          />
-          <CareActionButton
-            action="clean"
-            onPress={() => handleCareAction('clean')}
-            disabled={!canPerformAction('clean')}
-          />
-        </View>
+      <View style={styles.actionsRow}>
+        <CareActionButton
+          action="feed"
+          onPress={() => handleCareAction('feed')}
+          disabled={!canPerformAction('feed')}
+        />
+        <CareActionButton
+          action="play"
+          onPress={() => handleCareAction('play')}
+          disabled={!canPerformAction('play')}
+        />
+        <CareActionButton
+          action="sleep"
+          onPress={() => handleCareAction('sleep')}
+          disabled={!canPerformAction('sleep')}
+        />
+        <CareActionButton
+          action="clean"
+          onPress={() => handleCareAction('clean')}
+          disabled={!canPerformAction('clean')}
+        />
       </View>
       
       {/* Pet status */}
@@ -285,9 +281,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: theme.fonts.bold,
-    fontSize: 24,
+    fontSize: 26,
     color: theme.colors.text,
     marginBottom: theme.spacing.lg,
+    letterSpacing: -0.3,
   },
   petScene: {
     borderRadius: theme.borderRadius.xl,
@@ -316,17 +313,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionsContainer: {
-    marginBottom: theme.spacing.lg,
-  },
   actionsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: theme.spacing.md,
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+    ...theme.shadows.small,
   },
   statusCard: {
-    backgroundColor: 'white',
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.lg,
     ...theme.shadows.small,
@@ -348,7 +346,7 @@ const styles = StyleSheet.create({
   },
   activityItem: {
     flexDirection: 'row',
-    backgroundColor: 'white',
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
