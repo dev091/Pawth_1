@@ -25,6 +25,9 @@ interface PetProps {
   mood?: PetMood;
   /** Show the thought bubble (only when the pet has something to say). */
   showMoodBubble?: boolean;
+  /** Soft circular halo behind the pet. Turn off when it already sits in
+   *  an illustrated scene, where a spotlight disc reads as a sticker. */
+  showGlow?: boolean;
 }
 
 // Accessory overlay layout: position + size as % of the pet image box.
@@ -53,6 +56,7 @@ export default function Pet({
   accessoryId,
   mood = 'content',
   showMoodBubble = false,
+  showGlow = true,
 }: PetProps) {
   const petData = petTypes[type];
   const stage = getEvolutionStage(level);
@@ -220,7 +224,7 @@ export default function Pet({
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.petContainer, petAnimatedStyle]}>
-        {size !== 'small' && (
+        {size !== 'small' && showGlow && (
           <LinearGradient
             colors={glowColors}
             start={{ x: 0.5, y: 0 }}
@@ -384,16 +388,23 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     transform: [{ rotate: '45deg' }],
   },
+  // Name sits on a translucent pill so it stays legible whether the pet
+  // is on a light card or inside a dark illustrated scene.
   petInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: theme.spacing.md,
     justifyContent: 'center',
+    backgroundColor: 'rgba(28,22,16,0.4)',
+    paddingLeft: theme.spacing.md,
+    paddingRight: theme.spacing.xs,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
   },
   petName: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 20,
-    color: theme.colors.text,
+    fontFamily: theme.fonts.extraBold,
+    fontSize: 18,
+    color: 'white',
     marginRight: theme.spacing.sm,
   },
   levelBadge: {

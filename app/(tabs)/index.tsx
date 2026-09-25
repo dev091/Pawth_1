@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import Pet from '@/components/Pet';
-import PawPattern from '@/components/PawPattern';
+import SceneBackdrop from '@/components/SceneBackdrop';
 import StatusIndicator from '@/components/StatusIndicator';
 import DailyTasks from '@/components/DailyTasks';
 import MoodCheckIn from '@/components/MoodCheckIn';
@@ -12,15 +11,6 @@ import { usePet } from '@/context/PetContext';
 import { getEvolutionStage, evolutionStages, getPetMood } from '@/data/petData';
 import { theme, toolColors } from '@/constants/theme';
 import { Bell, Flame, ChevronRight, MessageCircle, Sparkles } from 'lucide-react-native';
-
-// Sky palette per time of day — turns the pet's stage into a little scene
-// instead of a plain white card.
-const scenePalette: Record<'morning' | 'afternoon' | 'evening' | 'night', [string, string]> = {
-  morning: ['#FFF6E0', '#FFE8C2'],
-  afternoon: ['#E3F6FF', '#C7ECFF'],
-  evening: ['#FFE3D6', '#FFC9C9'],
-  night: ['#2A2F5C', '#171A38'],
-};
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -122,27 +112,9 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Pet display area — a cozy little scene, Finch-style */}
-      <LinearGradient
-        colors={scenePalette[timeOfDay]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.sceneCard}
-      >
-        <PawPattern color={timeOfDay === 'night' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.25)'} />
-        {timeOfDay === 'night' ? (
-          <>
-            <Text style={[styles.decor, styles.starTopLeft]}>✨</Text>
-            <Text style={[styles.decor, styles.starTopRight]}>⭐</Text>
-            <Text style={[styles.decor, styles.moonIcon]}>🌙</Text>
-          </>
-        ) : (
-          <>
-            <Text style={[styles.decor, styles.cloudLeft]}>☁️</Text>
-            <Text style={[styles.decor, styles.cloudRight]}>☁️</Text>
-            {timeOfDay !== 'evening' && <Text style={[styles.decor, styles.sunIcon]}>☀️</Text>}
-          </>
-        )}
+      {/* Pet display area — an illustrated outdoor scene the pet stands in */}
+      <View style={styles.sceneCard}>
+        <SceneBackdrop timeOfDay={timeOfDay} />
 
         <View style={styles.petContainer}>
           <Pet
@@ -153,16 +125,18 @@ export default function HomeScreen() {
             accessoryId={currentPet.activeCustomization}
             mood={getPetMood(currentPet.stats)}
             showMoodBubble
+            showGlow={false}
           />
-          <View style={[styles.stageBadge, timeOfDay === 'night' && styles.stageBadgeNight]}>
+        </View>
+
+        <View style={styles.sceneFooter}>
+          <View style={styles.stageBadge}>
             <Text style={styles.stageEmoji}>{stage.emoji}</Text>
-            <Text style={[styles.stageText, timeOfDay === 'night' && styles.stageTextNight]}>
-              {stage.name}
-            </Text>
+            <Text style={styles.stageText}>{stage.name}</Text>
           </View>
           {nextStage && (
-            <Text style={[styles.nextStageText, timeOfDay === 'night' && styles.nextStageTextNight]}>
-              Evolves to {nextStage.name} {nextStage.emoji} at Lv. {nextStage.minLevel}
+            <Text style={styles.nextStageText}>
+              {nextStage.emoji} at Lv. {nextStage.minLevel}
             </Text>
           )}
         </View>
@@ -174,7 +148,7 @@ export default function HomeScreen() {
         >
           <MessageCircle size={20} color={theme.colors.primary} />
         </TouchableOpacity>
-      </LinearGradient>
+      </View>
 
       {/* Mood check-in */}
       <MoodCheckIn />
@@ -323,7 +297,7 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: theme.colors.card,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: 6,
     borderRadius: theme.borderRadius.full,
     marginTop: theme.spacing.sm,
     ...theme.shadows.small,
@@ -337,14 +311,19 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
   },
   nextStageText: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 13,
-    color: theme.colors.subtext,
-    marginTop: theme.spacing.xs,
+    fontFamily: theme.fonts.semiBold,
+    fontSize: 12,
+    color: 'white',
+    backgroundColor: 'rgba(28,22,16,0.4)',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 5,
+    borderRadius: theme.borderRadius.full,
+    overflow: 'hidden',
   },
   sceneCard: {
+    height: 360,
     borderRadius: theme.borderRadius.xl,
-    paddingVertical: theme.spacing.xl,
+    paddingBottom: theme.spacing.md,
     paddingHorizontal: theme.spacing.md,
     marginBottom: theme.spacing.lg,
     overflow: 'hidden',
@@ -352,43 +331,16 @@ const styles = StyleSheet.create({
     ...theme.shadows.medium,
   },
   petContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingTop: theme.spacing.lg,
   },
-  decor: {
-    position: 'absolute',
-    fontSize: 22,
-    opacity: 0.9,
-  },
-  cloudLeft: {
-    top: 16,
-    left: 20,
-    fontSize: 26,
-  },
-  cloudRight: {
-    top: 36,
-    right: 24,
-    fontSize: 20,
-  },
-  sunIcon: {
-    top: 14,
-    right: 20,
-    fontSize: 24,
-  },
-  starTopLeft: {
-    top: 18,
-    left: 28,
-    fontSize: 16,
-  },
-  starTopRight: {
-    top: 40,
-    right: 40,
-    fontSize: 14,
-  },
-  moonIcon: {
-    top: 16,
-    right: 22,
-    fontSize: 26,
+  sceneFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
   },
   chatFab: {
     position: 'absolute',
@@ -401,15 +353,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...theme.shadows.small,
-  },
-  stageBadgeNight: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  stageTextNight: {
-    color: '#FFE8C2',
-  },
-  nextStageTextNight: {
-    color: 'rgba(255,255,255,0.75)',
   },
   trailsTextWrap: {
     flex: 1,

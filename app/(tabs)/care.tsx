@@ -8,10 +8,9 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '@/constants/theme';
 import Pet from '@/components/Pet';
-import PawPattern from '@/components/PawPattern';
+import SceneBackdrop from '@/components/SceneBackdrop';
 import CareActionButton from '@/components/CareActionButton';
 import CustomizationShop from '@/components/CustomizationShop';
 import { usePet } from '@/context/PetContext';
@@ -152,15 +151,8 @@ export default function CareScreen() {
       <Text style={styles.title}>Care for {currentPet.name}</Text>
       
       {/* Pet animation */}
-      <LinearGradient
-        colors={['#E3F6FF', '#C7ECFF']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.petScene}
-      >
-        <PawPattern color="rgba(255,255,255,0.25)" />
-        <Text style={[styles.decor, styles.cloudLeft]}>☁️</Text>
-        <Text style={[styles.decor, styles.cloudRight]}>☁️</Text>
+      <View style={styles.petScene}>
+        <SceneBackdrop timeOfDay="afternoon" />
         <View style={styles.petContainer}>
           <Pet
             type={currentPet.type}
@@ -168,9 +160,10 @@ export default function CareScreen() {
             level={currentPet.level}
             animation={activeFeedback ? 'happy' : 'idle'}
             accessoryId={currentPet.activeCustomization}
+            showGlow={false}
           />
         </View>
-      </LinearGradient>
+      </View>
       
       {/* Care actions */}
       <View style={styles.actionsRow}>
@@ -296,20 +289,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
     ...theme.shadows.medium,
-  },
-  decor: {
-    position: 'absolute',
-    opacity: 0.9,
-  },
-  cloudLeft: {
-    top: 16,
-    left: 20,
-    fontSize: 26,
-  },
-  cloudRight: {
-    top: 36,
-    right: 24,
-    fontSize: 20,
   },
   petContainer: {
     alignItems: 'center',
